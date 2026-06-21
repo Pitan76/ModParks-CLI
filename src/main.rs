@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand, ArgAction};
+﻿use clap::{Parser, Subcommand, ArgAction};
 mod api_client;
 mod api_models;
 mod cache;
@@ -77,11 +77,14 @@ enum Commands {
     /// TUI を起動する
     Tui,
 
-    /// キャッシュをクリアする
-    CacheClear,
+    /// 最新バージョンへアップデートする
+    Update,
 
     /// ログアウトする (API キーを削除)
     Logout,
+
+    /// キャッシュをクリアする
+    CacheClear,
 }
 
 #[tokio::main]
@@ -89,6 +92,7 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     match cli.command {
         Commands::Login { api_key } => commands::login(&api_key).await?,
+        Commands::Update => commands::update()?,
         Commands::Logout => {
             let mut cfg = config::Config::load()?;
             cfg.api_key = String::new();
