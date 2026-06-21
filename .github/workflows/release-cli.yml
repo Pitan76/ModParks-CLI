@@ -1,0 +1,137 @@
+name: Release CLI
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build & Release (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            name: windows
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            name: macos
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            name: linux
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Prepare Assets (Windows)
+        if: matrix.name == 'windows'
+        shell: bash
+        run: |
+          mkdir -p release_assets
+          cp target/${{ matrix.target }}/release/modparks-cli.exe release_assets/
+          cp dist/windows/modparks-tui.cmd release_assets/
+          cd release_assets
+          7z a ../modparks-cli-${{ github.ref_name }}-windows-x86_64.zip *
+
+      - name: Prepare Assets (Unix)
+        if: matrix.name != 'windows'
+        shell: bash
+        run: |
+          mkdir -p release_assets
+          cp target/${{ matrix.target }}/release/modparks-cli release_assets/
+          cd release_assets
+          tar -czf ../modparks-cli-${{ github.ref_name }}-${{ matrix.name }}-x86_64.tar.gz *
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            modparks-cli-*.zip
+            modparks-cli-*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-winget:
+    name: Publish to Winget
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: vedantmgoyal2009/winget-releaser@v2
+        with:
+          identifier: Pitan76.ModParksCLI
+          version: ${{ github.ref_name }}
+          token: ${{ secrets.WINGET_GH_TOKEN }}
+
+  publish-apt:
+    name: Build & Publish APT Repository
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        
+      - name: Install cargo-deb & dpkg-dev
+        run: |
+          cargo install cargo-deb
+          sudo apt-get update && sudo apt-get install -y dpkg-dev gnupg
+
+      - name: Build .deb
+        run: cargo deb
+
+      - name: Import GPG Key
+        run: |
+          echo "${{ secrets.APT_GPG_PRIVATE_KEY }}" | gpg --batch --import
+
+      - name: Generate APT Repository
+        run: |
+          mkdir -p apt-repo/pool/main/
+          mkdir -p apt-repo/dists/stable/main/binary-amd64/
+          cp target/debian/*.deb apt-repo/pool/main/
+          cd apt-repo
+          dpkg-scanpackages --multiversion pool/main > dists/stable/main/binary-amd64/Packages
+          gzip -k -f dists/stable/main/binary-amd64/Packages
+          cat <<EOF > dists/stable/Release
+          Origin: ModParks
+          Label: ModParks CLI Repository
+          Suite: stable
+          Codename: stable
+          Architectures: amd64
+          Components: main
+          Description: Official ModParks APT Repository
+          EOF
+          gpg --default-key "${{ secrets.APT_GPG_KEY_EMAIL }}" --passphrase "${{ secrets.APT_GPG_PASSPHRASE }}" --batch --yes --pinentry-mode loopback -abs -o dists/stable/Release.gpg dists/stable/Release
+          gpg --default-key "${{ secrets.APT_GPG_KEY_EMAIL }}" --passphrase "${{ secrets.APT_GPG_PASSPHRASE }}" --batch --yes --pinentry-mode loopback --clearsign -o dists/stable/InRelease dists/stable/Release
+
+      - name: Deploy APT Repo to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./apt-repo
+          keep_files: true
+
+  publish-homebrew:
+    name: Publish to Homebrew
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bump Homebrew formula
+        uses: mislav/bump-homebrew-formula-action@v3
+        with:
+          formula-name: modparks-cli
+          homebrew-tap: Pitan76/homebrew-tap
+          download-url: https://github.com/Pitan76/ModParks-CLI/releases/download/${{ github.ref_name }}/modparks-cli-${{ github.ref_name }}-macos-x86_64.tar.gz
+        env:
+          COMMITTER_TOKEN: ${{ secrets.WINGET_GH_TOKEN }}
