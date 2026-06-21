@@ -26,7 +26,10 @@ impl Config {
             return Ok(Self::default());
         }
         let content = fs::read_to_string(&path).with_context(|| format!("Failed to read {}", path.display()))?;
-        let cfg: Config = serde_json::from_str(&content).context("Failed to parse config JSON")?;
+        let mut cfg: Config = serde_json::from_str(&content).context("Failed to parse config JSON")?;
+        if cfg.api_base_url.is_empty() {
+            cfg.api_base_url = Self::default().api_base_url;
+        }
         Ok(cfg)
     }
 
