@@ -9,9 +9,9 @@ pub enum AppEvent {
 }
 
 pub fn poll_event() -> Result<Option<AppEvent>> {
-    if event::poll(Duration::from_millis(100))? {
-        if let Event::Key(key) = event::read()? {
-            // Press のみ処理（Release/Repeat を無視して2回動作を防ぐ）
+    if event::poll(Duration::from_millis(50))? {
+        let ev = event::read()?;
+        if let Event::Key(key) = ev {
             if key.kind == KeyEventKind::Press {
                 return Ok(Some(AppEvent::Key(key)));
             }
@@ -21,6 +21,5 @@ pub fn poll_event() -> Result<Option<AppEvent>> {
 }
 
 pub fn is_quit(key: &KeyEvent) -> bool {
-    matches!(key.code, KeyCode::Char('q') | KeyCode::Esc)
-        || (key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL))
+    (key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL))
 }

@@ -1,7 +1,8 @@
-// src/api_client.rs
-use anyhow::{Result, Context};
+﻿// src/api_client.rs
+use anyhow::{Result, Context, anyhow};
 use reqwest::{Client, header::{HeaderMap, HeaderValue, USER_AGENT, AUTHORIZATION}};
 use serde::{Serialize, Deserialize};
+use serde_json::Value;
 use crate::config::Config;
 use crate::cache;
 
@@ -50,4 +51,64 @@ where
     }
 
     Ok(data)
+}
+
+#[derive(Serialize)]
+struct LoginPayload<'a> {
+    identifier: &'a str,
+    password: &'a str,
+    #[serde(rename = "totpCode", skip_serializing_if = "Option::is_none")]
+    totp_code: Option<&'a str>,
+}
+
+#[derive(Deserialize)]
+pub struct LoginResponse {
+    #[serde(rename = "apiKey")]
+    pub api_key: Option<String>,
+    #[serde(rename = "requires_2fa")]
+    pub requires_2fa: Option<bool>,
+    pub error: Option<String>,
+}
+
+/// IDとパスワード（および必要ならTOTP）を用いてログインし、API キーまたは2FA要求を返す。
+pub async fn auth_login(cfg: &Config, identifier: &str, password: &str, totp_code: Option<&str>) -> Result<LoginResponse> {
+    let client = build_client("")?;
+    let url = format!("{}/auth/login", cfg.api_base_url);
+    let payload = LoginPayload {
+        identifier,
+        password,
+        totp_code,
+    };
+
+    let resp = client.post(&url).json(&payload).send().await?;
+    let status = resp.status();
+    
+    let data: Value = resp.json().await?;
+    
+    if status.is_success() {
+        if let Some(key) = data.get("apiKey").and_then(|v| v.as_str()) {
+            return Ok(LoginResponse {
+                api_key: Some(key.to_string()),
+                requires_2fa: None,
+                error: None,
+            });
+        }
+    } else if status == 401 {
+        if let Some(req_2fa) = data.get("requires_2fa").and_then(|v| v.as_bool()) {
+            return Ok(LoginResponse {
+                api_key: None,
+                requires_2fa: Some(req_2fa),
+                error: None,
+            });
+        } else if let Some(err) = data.get("error").and_then(|v| v.as_str()) {
+            return Ok(LoginResponse {
+                api_key: None,
+                requires_2fa: None,
+                error: Some(err.to_string()),
+            });
+        }
+    }
+
+    let msg = data.get("error").and_then(|v| v.as_str()).unwrap_or("不明なエラー");
+    Err(anyhow!("ログイン失敗: {} ({})", msg, status))
 }
