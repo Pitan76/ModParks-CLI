@@ -13,13 +13,13 @@
 # 依存パッケージを取得し、リリースビルドを作成
 cargo build --release
 ```
-ビルドが成功すると、実行バイナリは `target/release/modparks.exe` に生成されます。
+ビルドが成功すると、実行バイナリは `target/release/modparks-cli.exe` に生成されます。
 
 ## インストール（オプション）
-ビルドしたバイナリをパスの通ったディレクトリにコピーすれば、どこからでも `modparks` コマンドを呼び出せます。
+ビルドしたバイナリをパスの通ったディレクトリにコピーすれば、どこからでも `modparks-cli` コマンドを呼び出せます。
 ```bash
 # 例: Windows のユーザープロファイルの bin ディレクトリへコピー
-copy target\release\modparks.exe %USERPROFILE%\bin\
+copy target\release\modparks-cli.exe %USERPROFILE%\bin\
 ```
 
 ## 使い方
