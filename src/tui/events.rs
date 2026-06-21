@@ -1,0 +1,23 @@
+﻿// src/tui/events.rs
+use anyhow::Result;
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+use std::time::Duration;
+
+pub enum AppEvent {
+    Key(KeyEvent),
+    Tick,
+}
+
+pub fn poll_event() -> Result<Option<AppEvent>> {
+    if event::poll(Duration::from_millis(100))? {
+        if let Event::Key(key) = event::read()? {
+            return Ok(Some(AppEvent::Key(key)));
+        }
+    }
+    Ok(Some(AppEvent::Tick))
+}
+
+pub fn is_quit(key: &KeyEvent) -> bool {
+    matches!(key.code, KeyCode::Char('q') | KeyCode::Esc)
+        || (key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL))
+}

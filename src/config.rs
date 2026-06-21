@@ -8,13 +8,24 @@ use anyhow::{Result, Context};
 pub struct Config {
     pub api_base_url: String,
     pub api_key: String,
+    /// キャッシュを有効にするか（デフォルト: true）
+    #[serde(default = "default_cache_enabled")]
+    pub cache_enabled: bool,
+    /// キャッシュの有効期間（秒）（デフォルト: 300秒 = 5分）
+    #[serde(default = "default_cache_ttl")]
+    pub cache_ttl_seconds: u64,
 }
+
+fn default_cache_enabled() -> bool { true }
+fn default_cache_ttl() -> u64 { 300 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
             api_base_url: "https://modparks.pitan76.net/api/v1".to_string(),
             api_key: String::new(),
+            cache_enabled: default_cache_enabled(),
+            cache_ttl_seconds: default_cache_ttl(),
         }
     }
 }
