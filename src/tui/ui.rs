@@ -7,6 +7,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap},
 };
 use unicode_width::UnicodeWidthStr;
+use tui_input::Input;
 use crate::api_models::{ApiProject, ApiIdea};
 
 pub const COLOR_ACCENT: Color = Color::Rgb(99, 179, 237);
@@ -14,29 +15,26 @@ pub const COLOR_DIM: Color    = Color::Rgb(120, 120, 140);
 pub const COLOR_BG: Color     = Color::Rgb(15, 15, 25);
 pub const COLOR_FG: Color     = Color::White;
 pub const COLOR_SELECT: Color = Color::Rgb(44, 82, 130);
+pub const COLOR_ERROR: Color  = Color::Red;
 
-/// 表示幅（全角=2, 半角=1）でパディング
 fn pad_width(s: &str, target: usize) -> String {
     let w = s.width();
-    if w >= target {
-        s.to_string()
-    } else {
-        format!("{}{}", s, " ".repeat(target - w))
-    }
+    if w >= target { s.to_string() } else { format!("{}{}", s, " ".repeat(target - w)) }
 }
 
-/// 表示幅で右揃えパディング
 fn rpad_width(s: &str, target: usize) -> String {
     let w = s.width();
-    if w >= target {
-        s.to_string()
-    } else {
-        format!("{}{}", " ".repeat(target - w), s)
-    }
+    if w >= target { s.to_string() } else { format!("{}{}", " ".repeat(target - w), s) }
 }
 
-pub fn render_header(f: &mut Frame, area: Rect, title: &str) {
-    let header = Paragraph::new(format!(" ModParks CLI  |  {}", title))
+pub fn render_header(f: &mut Frame, area: Rect, title: &str, page_info: Option<&str>) {
+    let title_text = if let Some(info) = page_info {
+        format!(" ModParks CLI  |  {} ({})", title, info)
+    } else {
+        format!(" ModParks CLI  |  {}", title)
+    };
+    
+    let header = Paragraph::new(title_text)
         .style(Style::default().fg(COLOR_ACCENT).add_modifier(Modifier::BOLD))
         .block(Block::default().borders(Borders::BOTTOM).border_style(Style::default().fg(COLOR_ACCENT)));
     f.render_widget(header, area);
@@ -86,7 +84,6 @@ pub fn render_project_detail(f: &mut Frame, area: Rect, project: &ApiProject) {
 
     let tags = project.tags.as_deref().unwrap_or(&[]).join(", ");
 
-    // ラベルを表示幅 8 に揃える
     let rows: &[(&str, &str)] = &[
         ("名前",           &project.name),
         ("スラッグ",       &project.slug),
@@ -118,7 +115,6 @@ pub fn render_idea_list(
     ideas: &[ApiIdea],
     state: &mut ListState,
 ) {
-    // ステータスラベルはすべて半角で統一（ズレ回避）
     let items: Vec<ListItem> = ideas.iter().map(|idea| {
         let (status_color, status_label) = match idea.status.as_str() {
             "open"        => (Color::Green,              "[open      ]"),
@@ -170,15 +166,26 @@ pub fn render_loading(f: &mut Frame, area: Rect) {
     f.render_widget(para, area);
 }
 
+pub fn render_error(f: &mut Frame, area: Rect, message: &str) {
+    let para = Paragraph::new(format!("エラー: {}", message))
+        .style(Style::default().fg(COLOR_ERROR))
+        .alignment(Alignment::Center)
+        .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(COLOR_ERROR)));
+    f.render_widget(para, area);
+}
+
 pub fn render_help(f: &mut Frame, area: Rect) {
     let key_w = 14usize;
     let entries: &[(&str, &str)] = &[
         ("Up / Down",   "選択を移動"),
-        ("Enter",       "詳細を表示"),
+        ("Left / Right","ページ移動"),
+        ("Enter",       "詳細を表示 / ログイン実行"),
         ("b / BS",      "前の画面に戻る"),
         ("p",           "プロジェクト一覧"),
         ("i",           "アイデア一覧"),
         ("r",           "再取得（キャッシュ無視）"),
+        ("/",           "検索"),
+        ("l",           "表示件数変更 (20/40/80)"),
         ("?",           "このヘルプを表示"),
         ("q / Esc",     "終了"),
     ];
@@ -198,14 +205,55 @@ pub fn render_help(f: &mut Frame, area: Rect) {
     f.render_widget(para, area);
 }
 
+pub fn render_input(f: &mut Frame, area: Rect, title: &str, input: &Input, is_password: bool) {
+    let text = if is_password {
+        "*".repeat(input.value().chars().count())
+    } else {
+        input.value().to_string()
+    };
+    
+    let para = Paragraph::new(text)
+        .style(Style::default().fg(COLOR_FG))
+        .block(Block::default().borders(Borders::ALL).title(format!(" {} ", title)).border_style(Style::default().fg(COLOR_ACCENT)));
+    f.render_widget(para, area);
+    
+    // カーソル表示
+    f.set_cursor(area.x + 1 + input.visual_cursor() as u16, area.y + 1);
+}
+
 pub fn split_layout(area: Rect) -> (Rect, Rect, Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(2),
-            Constraint::Min(0),
-            Constraint::Length(2),
+            Constraint::Length(2), // Header
+            Constraint::Min(0),    // Body
+            Constraint::Length(2), // Footer
         ])
         .split(area);
     (chunks[0], chunks[1], chunks[2])
+}
+
+pub fn split_search(area: Rect) -> (Rect, Rect) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // Search bar
+            Constraint::Min(0),    // List
+        ])
+        .split(area);
+    (chunks[0], chunks[1])
+}
+
+pub fn split_login(area: Rect) -> (Rect, Rect, Rect, Rect, Rect) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // Option Selector
+            Constraint::Length(3), // ID / API Key
+            Constraint::Length(3), // Password
+            Constraint::Length(3), // TOTP
+            Constraint::Min(0),    // Padding/Message
+        ])
+        .split(area);
+    (chunks[0], chunks[1], chunks[2], chunks[3], chunks[4])
 }
