@@ -9,12 +9,26 @@ permissions:
   contents: write
 
 jobs:
-  build-windows:
-    name: Build (Windows x86_64)
-    runs-on: windows-latest
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: modparks-cli-windows
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: modparks-cli-linux
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: modparks-cli-macos
+            
     defaults:
       run:
         working-directory: ./
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,7 +37,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          targets: x86_64-pc-windows-msvc
+          targets: ${{ matrix.target }}
 
       - name: Cache cargo
         uses: actions/cache@v4
@@ -35,24 +49,33 @@ jobs:
           restore-keys: ${{ runner.os }}-cargo-
 
       - name: Build release binary
-        run: cargo build --release --locked
+        run: cargo build --release --locked --target ${{ matrix.target }}
 
-      - name: Rename binary with version
+      - name: Rename binary with version (Windows)
+        if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
           $tag = "${{ github.ref_name }}"
-          Copy-Item target/release/modparks-cli.exe "modparks-cli-${tag}-windows-x86_64.exe"
+          Copy-Item target/${{ matrix.target }}/release/modparks-cli.exe "modparks-cli-${tag}-windows-x86_64.exe"
+
+      - name: Rename binary with version (Unix)
+        if: matrix.os != 'windows-latest'
+        shell: bash
+        run: |
+          tag="${{ github.ref_name }}"
+          os_name=$(echo "${{ matrix.os }}" | cut -d'-' -f1)
+          cp target/${{ matrix.target }}/release/modparks-cli "modparks-cli-${tag}-${os_name}-x86_64"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: modparks-cli-windows
-          path: modparks-cli-*.exe
+          name: ${{ matrix.artifact_name }}
+          path: modparks-cli-*
           if-no-files-found: error
 
   create-release:
     name: Create GitHub Release
-    needs: build-windows
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -62,6 +85,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+          merge-multiple: true
 
       - name: Create Release and upload assets
         uses: softprops/action-gh-release@v2
@@ -71,8 +95,12 @@ jobs:
             ## ModParks CLI ${{ github.ref_name }}
 
             ### インストール方法
-            1. 下記のアセットから `modparks-cli-${{ github.ref_name }}-windows-x86_64.exe` をダウンロード
-            2. パスの通ったディレクトリに `modparks-cli.exe` としてコピー
+            下記のアセットからOSに対応した実行ファイルをダウンロードしてください。
+            - **Windows**: `modparks-cli-${{ github.ref_name }}-windows-x86_64.exe`
+            - **macOS**: `modparks-cli-${{ github.ref_name }}-macos-x86_64`
+            - **Linux**: `modparks-cli-${{ github.ref_name }}-ubuntu-x86_64`
+
+            ダウンロード後、パスの通ったディレクトリに配置し（macOS / Linux の場合は `chmod +x` で実行権限を付与してください）、コマンドとして実行します。
 
             ### 主なコマンド
             ```
@@ -86,4 +114,4 @@ jobs:
             ```
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
-          files: artifacts/**/*.exe
+          files: artifacts/*

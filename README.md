@@ -76,7 +76,7 @@ git tag -a v0.1.0 -m "Release v0.1.0"
 git push origin v0.1.0
 ```
 
-その後、GitHub Actions 側で自動的に Windows 向けの `.exe` がビルドされ、Releases にアップロードされます。
+その後、GitHub Actions 側で自動的に **Windows**, **macOS**, **Linux** 向けの実行ファイルがビルドされ、Releases にアップロードされます。
 
 ## ライセンス
 この CLI は MIT ライセンスの下で配布されています。詳細はリポジトリの `LICENSE` ファイルをご覧ください。
