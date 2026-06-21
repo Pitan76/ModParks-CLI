@@ -1,4 +1,4 @@
-﻿name: Release
+name: Release
 
 on:
   push:
@@ -55,7 +55,7 @@ jobs:
           sudo apt-get install -y gcc-x86-64-linux-gnu libc6-dev-amd64-cross
 
       - name: Build release binary
-        run: cargo build --release --locked --target ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target }}
 
       - name: Create Deb Package (Linux)
         if: matrix.os == 'ubuntu-latest'
