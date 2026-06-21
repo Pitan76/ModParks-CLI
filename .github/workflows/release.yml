@@ -148,3 +148,76 @@ jobs:
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
           files: artifacts/*
+
+  publish-winget:
+    name: Publish to Winget
+    needs: create-release
+    runs-on: windows-latest
+    steps:
+      - uses: vedantmgoyal2009/winget-releaser@v2
+        with:
+          identifier: Pitan76.ModParksCLI
+          version: ${{ github.ref_name }}
+          token: ${{ secrets.WINGET_GH_TOKEN }}
+
+  publish-apt:
+    name: Publish APT Repository
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Install dpkg-dev & gnupg
+        run: sudo apt-get update && sudo apt-get install -y dpkg-dev gnupg
+
+      - name: Import GPG Key
+        run: echo "${{ secrets.APT_GPG_PRIVATE_KEY }}" | gpg --batch --import
+
+      - name: Generate APT Repository
+        run: |
+          mkdir -p apt-repo/pool/main/
+          mkdir -p apt-repo/dists/stable/main/binary-amd64/
+          cp artifacts/*.deb apt-repo/pool/main/
+          cd apt-repo
+          dpkg-scanpackages --multiversion pool/main > dists/stable/main/binary-amd64/Packages
+          gzip -k -f dists/stable/main/binary-amd64/Packages
+          cat <<EOF > dists/stable/Release
+          Origin: ModParks
+          Label: ModParks CLI Repository
+          Suite: stable
+          Codename: stable
+          Architectures: amd64
+          Components: main
+          Description: Official ModParks APT Repository
+          EOF
+          gpg --default-key "${{ secrets.APT_GPG_KEY_EMAIL }}" --passphrase "${{ secrets.APT_GPG_PASSPHRASE }}" --batch --yes --pinentry-mode loopback -abs -o dists/stable/Release.gpg dists/stable/Release
+          gpg --default-key "${{ secrets.APT_GPG_KEY_EMAIL }}" --passphrase "${{ secrets.APT_GPG_PASSPHRASE }}" --batch --yes --pinentry-mode loopback --clearsign -o dists/stable/InRelease dists/stable/Release
+
+      - name: Deploy APT Repo to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./apt-repo
+          keep_files: true
+
+  publish-homebrew:
+    name: Publish to Homebrew
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bump Homebrew formula
+        uses: mislav/bump-homebrew-formula-action@v3
+        with:
+          formula-name: modparks-cli
+          homebrew-tap: Pitan76/homebrew-tap
+          download-url: https://github.com/Pitan76/ModParks-CLI/releases/download/${{ github.ref_name }}/modparks-cli-${{ github.ref_name }}-macos-x86_64.tar.gz
+        env:
+          COMMITTER_TOKEN: ${{ secrets.WINGET_GH_TOKEN }}
