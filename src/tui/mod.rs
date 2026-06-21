@@ -236,7 +236,6 @@ async fn fetch_ideas(app: &mut App) {
 }
 
 pub async fn run_tui() -> Result<()> {
-    let mut terminal = tui::init()?;
     let cfg = Config::load()?;
     
     let current_user = if !cfg.api_key.is_empty() {
