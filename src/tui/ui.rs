@@ -6,13 +6,34 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Wrap},
 };
+use unicode_width::UnicodeWidthStr;
 use crate::api_models::{ApiProject, ApiIdea};
 
-pub const COLOR_ACCENT: Color = Color::Rgb(99, 179, 237);   // ModParks ブルー
+pub const COLOR_ACCENT: Color = Color::Rgb(99, 179, 237);
 pub const COLOR_DIM: Color    = Color::Rgb(120, 120, 140);
 pub const COLOR_BG: Color     = Color::Rgb(15, 15, 25);
 pub const COLOR_FG: Color     = Color::White;
 pub const COLOR_SELECT: Color = Color::Rgb(44, 82, 130);
+
+/// 表示幅（全角=2, 半角=1）でパディング
+fn pad_width(s: &str, target: usize) -> String {
+    let w = s.width();
+    if w >= target {
+        s.to_string()
+    } else {
+        format!("{}{}", s, " ".repeat(target - w))
+    }
+}
+
+/// 表示幅で右揃えパディング
+fn rpad_width(s: &str, target: usize) -> String {
+    let w = s.width();
+    if w >= target {
+        s.to_string()
+    } else {
+        format!("{}{}", " ".repeat(target - w), s)
+    }
+}
 
 pub fn render_header(f: &mut Frame, area: Rect, title: &str) {
     let header = Paragraph::new(format!(" ModParks CLI  |  {}", title))
@@ -42,15 +63,17 @@ pub fn render_project_list(
     let items: Vec<ListItem> = projects.iter().map(|p| {
         let dl = format!("{} DL", p.downloads.total);
         let line = Line::from(vec![
-            Span::styled(format!("  {:<40}", p.name), Style::default().fg(COLOR_FG)),
-            Span::styled(format!(" {:>10}", dl), Style::default().fg(COLOR_DIM)),
-            Span::styled(format!("  {}", p.slug), Style::default().fg(COLOR_DIM)),
+            Span::styled(format!("  {}", pad_width(&p.name, 40)), Style::default().fg(COLOR_FG)),
+            Span::styled(format!(" {}", rpad_width(&dl, 10)),     Style::default().fg(COLOR_DIM)),
+            Span::styled(format!("  {}", p.slug),                  Style::default().fg(COLOR_DIM)),
         ]);
         ListItem::new(line)
     }).collect();
 
     let list = List::new(items)
-        .block(Block::default().borders(Borders::ALL).title(" プロジェクト一覧 ").border_style(Style::default().fg(COLOR_ACCENT)))
+        .block(Block::default().borders(Borders::ALL)
+            .title(" プロジェクト一覧 ")
+            .border_style(Style::default().fg(COLOR_ACCENT)))
         .highlight_style(Style::default().bg(COLOR_SELECT).fg(COLOR_FG).add_modifier(Modifier::BOLD))
         .highlight_symbol("▶ ");
     f.render_stateful_widget(list, area, state);
@@ -62,16 +85,23 @@ pub fn render_project_detail(f: &mut Frame, area: Rect, project: &ApiProject) {
     }).unwrap_or_else(|| "不明".to_string());
 
     let tags = project.tags.as_deref().unwrap_or(&[]).join(", ");
-    let text = format!(
-        "名前:         {}\nスラッグ:     {}\n作者:         {}\nライセンス:   {}\nダウンロード数: {}\nタグ:         {}\n\n--- 説明 ---\n{}",
-        project.name,
-        project.slug,
-        author,
-        project.license,
-        project.downloads.total,
-        if tags.is_empty() { "なし".to_string() } else { tags },
-        project.description.as_deref().unwrap_or("なし"),
-    );
+
+    // ラベルを表示幅 8 に揃える
+    let rows: &[(&str, &str)] = &[
+        ("名前",           &project.name),
+        ("スラッグ",       &project.slug),
+        ("作者",           &author),
+        ("ライセンス",     &project.license),
+    ];
+    let mut text = String::new();
+    for (label, value) in rows {
+        text.push_str(&format!("{}  {}\n", pad_width(label, 8), value));
+    }
+    text.push_str(&format!("{}  {}\n", pad_width("DL数", 8), project.downloads.total));
+    text.push_str(&format!("{}  {}\n", pad_width("タグ", 8),
+        if tags.is_empty() { "なし".to_string() } else { tags }));
+    text.push_str("\n--- 説明 ---\n");
+    text.push_str(project.description.as_deref().unwrap_or("なし"));
 
     let para = Paragraph::new(text)
         .block(Block::default().borders(Borders::ALL)
@@ -88,28 +118,25 @@ pub fn render_idea_list(
     ideas: &[ApiIdea],
     state: &mut ListState,
 ) {
+    // ステータスラベルはすべて半角で統一（ズレ回避）
     let items: Vec<ListItem> = ideas.iter().map(|idea| {
-        let status_color = match idea.status.as_str() {
-            "open"        => Color::Green,
-            "in_progress" => Color::Yellow,
-            "fulfilled"   => Color::Rgb(120, 120, 140),
-            _             => Color::White,
-        };
-        let status_label = match idea.status.as_str() {
-            "open"        => "[ 募集中 ]",
-            "in_progress" => "[ 対応中 ]",
-            "fulfilled"   => "[ 完了   ]",
-            _             => "[  ---   ]",
+        let (status_color, status_label) = match idea.status.as_str() {
+            "open"        => (Color::Green,              "[open      ]"),
+            "in_progress" => (Color::Yellow,             "[in_progress]"),
+            "fulfilled"   => (Color::Rgb(120, 120, 140), "[fulfilled ]"),
+            s             => (Color::White,              s),
         };
         let line = Line::from(vec![
-            Span::styled(format!("  {:<12}", status_label), Style::default().fg(status_color)),
-            Span::styled(format!(" {}", idea.title), Style::default().fg(COLOR_FG)),
+            Span::styled(format!("  {}", status_label),              Style::default().fg(status_color)),
+            Span::styled(format!("  {}", idea.title), Style::default().fg(COLOR_FG)),
         ]);
         ListItem::new(line)
     }).collect();
 
     let list = List::new(items)
-        .block(Block::default().borders(Borders::ALL).title(" アイデア一覧 ").border_style(Style::default().fg(COLOR_ACCENT)))
+        .block(Block::default().borders(Borders::ALL)
+            .title(" アイデア一覧 ")
+            .border_style(Style::default().fg(COLOR_ACCENT)))
         .highlight_style(Style::default().bg(COLOR_SELECT).fg(COLOR_FG).add_modifier(Modifier::BOLD))
         .highlight_symbol("▶ ");
     f.render_stateful_widget(list, area, state);
@@ -120,10 +147,12 @@ pub fn render_idea_detail(f: &mut Frame, area: Rect, idea: &ApiIdea) {
         a.display_name.clone().unwrap_or_else(|| a.username.clone())
     }).unwrap_or_else(|| "不明".to_string());
 
-    let text = format!(
-        "ID:     {}\n状態:   {}\n作者:   {}\n\n--- 内容 ---\n{}",
-        idea.id, idea.status, author, idea.content,
-    );
+    let mut text = String::new();
+    text.push_str(&format!("{}  {}\n", pad_width("ID", 8),   idea.id));
+    text.push_str(&format!("{}  {}\n", pad_width("状態", 8), idea.status));
+    text.push_str(&format!("{}  {}\n", pad_width("作者", 8), author));
+    text.push_str("\n--- 内容 ---\n");
+    text.push_str(&idea.content);
 
     let para = Paragraph::new(text)
         .block(Block::default().borders(Borders::ALL)
@@ -142,19 +171,28 @@ pub fn render_loading(f: &mut Frame, area: Rect) {
 }
 
 pub fn render_help(f: &mut Frame, area: Rect) {
-    let text = vec![
+    let key_w = 14usize;
+    let entries: &[(&str, &str)] = &[
+        ("Up / Down",   "選択を移動"),
+        ("Enter",       "詳細を表示"),
+        ("b / BS",      "前の画面に戻る"),
+        ("p",           "プロジェクト一覧"),
+        ("i",           "アイデア一覧"),
+        ("r",           "再取得（キャッシュ無視）"),
+        ("?",           "このヘルプを表示"),
+        ("q / Esc",     "終了"),
+    ];
+    let mut lines = vec![
         Line::from(vec![Span::styled("キーバインド", Style::default().fg(COLOR_ACCENT).add_modifier(Modifier::BOLD))]),
         Line::from(""),
-        Line::from(vec![Span::styled("  ↑ / ↓     ", Style::default().fg(COLOR_ACCENT)), Span::raw("選択を移動")]),
-        Line::from(vec![Span::styled("  Enter      ", Style::default().fg(COLOR_ACCENT)), Span::raw("詳細を表示")]),
-        Line::from(vec![Span::styled("  b / BS     ", Style::default().fg(COLOR_ACCENT)), Span::raw("前の画面に戻る")]),
-        Line::from(vec![Span::styled("  p          ", Style::default().fg(COLOR_ACCENT)), Span::raw("プロジェクト一覧")]),
-        Line::from(vec![Span::styled("  i          ", Style::default().fg(COLOR_ACCENT)), Span::raw("アイデア一覧")]),
-        Line::from(vec![Span::styled("  r          ", Style::default().fg(COLOR_ACCENT)), Span::raw("再取得（キャッシュ無視）")]),
-        Line::from(vec![Span::styled("  ?          ", Style::default().fg(COLOR_ACCENT)), Span::raw("このヘルプを表示")]),
-        Line::from(vec![Span::styled("  q / Esc    ", Style::default().fg(COLOR_ACCENT)), Span::raw("終了")]),
     ];
-    let para = Paragraph::new(text)
+    for (key, desc) in entries {
+        lines.push(Line::from(vec![
+            Span::styled(format!("  {}", pad_width(key, key_w)), Style::default().fg(COLOR_ACCENT)),
+            Span::raw(*desc),
+        ]));
+    }
+    let para = Paragraph::new(lines)
         .block(Block::default().borders(Borders::ALL).title(" ヘルプ ").border_style(Style::default().fg(COLOR_ACCENT)))
         .wrap(Wrap { trim: false });
     f.render_widget(para, area);

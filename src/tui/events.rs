@@ -1,6 +1,6 @@
 ﻿// src/tui/events.rs
 use anyhow::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use std::time::Duration;
 
 pub enum AppEvent {
@@ -11,7 +11,10 @@ pub enum AppEvent {
 pub fn poll_event() -> Result<Option<AppEvent>> {
     if event::poll(Duration::from_millis(100))? {
         if let Event::Key(key) = event::read()? {
-            return Ok(Some(AppEvent::Key(key)));
+            // Press のみ処理（Release/Repeat を無視して2回動作を防ぐ）
+            if key.kind == KeyEventKind::Press {
+                return Ok(Some(AppEvent::Key(key)));
+            }
         }
     }
     Ok(Some(AppEvent::Tick))
