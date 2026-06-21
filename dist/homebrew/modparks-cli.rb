@@ -1,7 +1,7 @@
-﻿class ModparksCli < Formula
+class ModparksCli < Formula
   desc "CLI for ModParks"
   homepage "https://github.com/Pitan76/ModParks-CLI"
-  version "0.0.4"
+  version "0.0.5"
   
   if OS.mac?
     url "https://github.com/Pitan76/ModParks-CLI/releases/download/v0.0.1/modparks-cli-v0.0.1-macos-x86_64.tar.gz"
@@ -13,6 +13,7 @@
 
   def install
     bin.install "modparks-cli"
+    bin.install_symlink "modparks-cli" => "modparks-tui"
   end
 
   test do
