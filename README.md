@@ -76,6 +76,11 @@ git tag -a v0.1.0 -m "Release v0.1.0"
 git push origin v0.1.0
 ```
 
+## タスク
+- 右クリックで開けるようにする
+- modparks-tuiでtuiを直接開けるようにする
+
+
 その後、GitHub Actions 側で自動的に **Windows**, **macOS**, **Linux** 向けの実行ファイルがビルドされ、Releases にアップロードされます。
 
 ## ライセンス
