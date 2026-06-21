@@ -18,3 +18,17 @@ crossterm = "0.28"
 unicode-width = "0.2"
 tui-input = "0.10"
 self_update = { version = "0.44.0", features = ["archive-tar", "archive-zip", "compression-flate2", "rustls"] }
+[package.metadata.deb]
+maintainer = "Pitan76"
+copyright = "2026, Pitan76"
+license-file = ["../LICENSE", "4"]
+extended-description = "ModParks CLI tool for interacting with ModParks API."
+depends = ""
+section = "utility"
+priority = "optional"
+
+[package.metadata.wix]
+upgrade-guid = "81216631-BDE9-43B6-956D-DE04423C4293"
+path-guid = "AE72E8BB-732C-409B-B0DC-B4339678122E"
+license = false
+eula = false
