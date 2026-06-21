@@ -57,6 +57,9 @@ enum Commands {
         limit: u32,
     },
 
+    /// 指定 ID のアイデア詳細を取得
+    Idea { id: String },
+
     /// プロジェクトのコメント一覧を取得
     Comments { slug: String },
 
@@ -79,6 +82,7 @@ async fn main() -> anyhow::Result<()> {
         Commands::Project { slug } => commands::get_project(&slug).await?,
         Commands::Versions { slug, limit } => commands::list_versions(&slug, limit).await?,
         Commands::Ideas { limit } => commands::list_ideas(limit).await?,
+        Commands::Idea { id } => commands::get_idea(&id).await?,
         Commands::Comments { slug } => commands::list_comments(&slug).await?,
         Commands::CommentPost { slug, content } => commands::post_comment(&slug, &content).await?,
         Commands::Sync { slug } => commands::sync_project(&slug).await?,
