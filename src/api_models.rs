@@ -2,102 +2,99 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
-struct ApiProject {
-    id: String,
-    slug: String,
-    name: String,
-    description: Option<String>,
+pub struct ApiProject {
+    pub id: String,
+    pub slug: String,
+    pub name: String,
+    pub description: Option<String>,
     #[serde(rename = "iconUrl")]
-    icon_url: Option<String>,
+    pub icon_url: Option<String>,
     #[serde(rename = "type")]
-    project_type: String,
-    license: String,
-    downloads: Downloads,
+    pub project_type: String,
+    pub license: String,
+    pub downloads: Downloads,
     #[serde(rename = "createdAt")]
-    created_at: i64,
+    pub created_at: i64,
     #[serde(rename = "updatedAt")]
-    updated_at: i64,
-    author: Option<Author>,
-    categories: Option<Vec<String>>, // Adjusted from original Option<Vec<Vec<String>>> typo
-    tags: Option<Vec<String>>,
+    pub updated_at: i64,
+    pub author: Option<Author>,
+    pub tags: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct ApiProjectDetail {
-    id: String,
-    slug: String,
-    name: String,
-    description: Option<String>,
+pub struct ApiProjectDetail {
+    pub id: String,
+    pub slug: String,
+    pub name: String,
+    pub description: Option<String>,
     #[serde(rename = "iconUrl")]
-    icon_url: Option<String>,
+    pub icon_url: Option<String>,
     #[serde(rename = "type")]
-    project_type: String,
-    license: String,
-    downloads: Downloads,
+    pub project_type: String,
+    pub license: String,
+    pub downloads: Downloads,
     #[serde(rename = "createdAt")]
-    created_at: i64,
+    pub created_at: i64,
     #[serde(rename = "updatedAt")]
-    updated_at: i64,
-    author: Author,
-    tags: Vec<String>,
-    dependencies: Vec<Dependency>,
-    dependents: Vec<Dependency>,
+    pub updated_at: i64,
+    pub author: Author,
+    pub tags: Vec<String>,
+    pub dependencies: Vec<Dependency>,
+    pub dependents: Vec<Dependency>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct Downloads {
-    total: u32,
-    native: u32,
-    #[serde(flatten)]
-    extra: std::collections::HashMap<String, u32>,
+pub struct Downloads {
+    pub total: u32,
+    pub native: u32,
+    pub modrinth: Option<u32>,
+    pub curseforge: Option<u32>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct Author {
-    username: String,
+pub struct Author {
+    pub username: String,
     #[serde(rename = "displayName")]
-    display_name: Option<String>,
+    pub display_name: Option<String>,
     #[serde(rename = "avatarUrl")]
-    avatar_url: Option<String>,
+    pub avatar_url: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct Dependency {
-    id: String,
+pub struct Dependency {
+    pub id: String,
     #[serde(rename = "dependencyType")]
-    dependency_type: String,
-    project: DependencyProject,
+    pub dependency_type: String,
+    pub project: DependencyProject,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct DependencyProject {
-    id: String,
-    slug: String,
-    name: String,
+pub struct DependencyProject {
+    pub id: String,
+    pub slug: String,
+    pub name: String,
     #[serde(rename = "iconUrl")]
-    icon_url: Option<String>,
+    pub icon_url: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct ApiIdea {
-    id: String,
-    title: String,
-    content: String,
-    status: String,
+pub struct ApiIdea {
+    pub id: String,
+    pub title: String,
+    pub content: String,
+    pub status: String,
     #[serde(rename = "createdAt")]
-    created_at: i64,
+    pub created_at: i64,
     #[serde(rename = "updatedAt")]
-    updated_at: i64,
-    author: Option<Author>,
+    pub updated_at: i64,
+    pub author: Option<Author>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct ApiComment {
-    id: String,
-    content: String,
-    author: Option<Author>,
+pub struct ApiComment {
+    pub id: String,
+    pub content: String,
+    pub author: Option<Author>,
     #[serde(rename = "createdAt")]
-    created_at: i64,
+    pub created_at: i64,
 }
-
-// Paginated response and meta structs remain in commands.rs for reuse
