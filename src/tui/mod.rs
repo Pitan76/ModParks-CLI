@@ -1,4 +1,4 @@
-﻿// src/tui/mod.rs
+// src/tui/mod.rs
 pub mod events;
 pub mod ui;
 
@@ -162,6 +162,24 @@ impl App {
                     self.input_mode = InputMode::LoginPassword;
                 } else if self.input_mode == InputMode::LoginPassword && self.login_requires_totp {
                     self.input_mode = InputMode::LoginTotp;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn enter(&mut self) {
+        match &self.screen {
+            Screen::ProjectList => {
+                if let Some(i) = self.project_state.selected() {
+                    self.prev_screen = Some(Screen::ProjectList);
+                    self.screen = Screen::ProjectDetail(i);
+                }
+            }
+            Screen::IdeaList => {
+                if let Some(i) = self.idea_state.selected() {
+                    self.prev_screen = Some(Screen::IdeaList);
+                    self.screen = Screen::IdeaDetail(i);
                 }
             }
             _ => {}

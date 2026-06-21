@@ -1,4 +1,4 @@
-﻿// src/tui/ui.rs
+// src/tui/ui.rs
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -218,7 +218,7 @@ pub fn render_input(f: &mut Frame, area: Rect, title: &str, input: &Input, is_pa
     f.render_widget(para, area);
     
     // カーソル表示
-    f.set_cursor(area.x + 1 + input.visual_cursor() as u16, area.y + 1);
+    f.set_cursor_position((area.x + 1 + input.visual_cursor() as u16, area.y + 1));
 }
 
 pub fn split_layout(area: Rect) -> (Rect, Rect, Rect) {
