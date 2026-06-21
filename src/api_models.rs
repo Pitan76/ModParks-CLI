@@ -101,3 +101,24 @@ pub struct ApiComment {
     #[serde(rename = "createdAt")]
     pub created_at: i64,
 }
+
+#[derive(Debug, Serialize)]
+pub struct CreateProjectReq {
+    pub name: String,
+    pub slug: String,
+    pub description: String,
+    #[serde(rename = "type")]
+    pub project_type: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct UpdateProjectReq {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub slug: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    pub project_type: Option<String>,
+}

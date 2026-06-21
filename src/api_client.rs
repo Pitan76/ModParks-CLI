@@ -5,6 +5,7 @@ use serde::{Serialize, Deserialize};
 use serde_json::Value;
 use crate::config::Config;
 use crate::cache;
+use crate::api_models::{CreateProjectReq, UpdateProjectReq};
 
 /// reqwest クライアントを構築する。
 pub fn build_client(api_key: &str) -> Result<Client> {
@@ -112,4 +113,34 @@ pub async fn auth_login(cfg: &Config, identifier: &str, password: &str, totp_cod
 
     let msg = data.get("error").and_then(|v| v.as_str()).unwrap_or("不明なエラー");
     Err(anyhow!("ログイン失敗: {} ({})", msg, status))
+}
+
+pub async fn create_project(cfg: &Config, req: &CreateProjectReq) -> Result<()> {
+    let client = build_client(&cfg.api_key)?;
+    let url = format!("{}/projects", cfg.api_base_url);
+    let resp = client.post(&url).json(req).send().await?;
+    let status = resp.status();
+    
+    if status.is_success() {
+        return Ok(());
+    }
+    
+    let data: Value = resp.json().await.unwrap_or_default();
+    let msg = data.get("error").and_then(|v| v.as_str()).unwrap_or("不明なエラー");
+    Err(anyhow!("プロジェクト作成失敗: {} ({})", msg, status))
+}
+
+pub async fn update_project(cfg: &Config, slug: &str, req: &UpdateProjectReq) -> Result<()> {
+    let client = build_client(&cfg.api_key)?;
+    let url = format!("{}/projects/{}", cfg.api_base_url, slug);
+    let resp = client.patch(&url).json(req).send().await?;
+    let status = resp.status();
+    
+    if status.is_success() {
+        return Ok(());
+    }
+    
+    let data: Value = resp.json().await.unwrap_or_default();
+    let msg = data.get("error").and_then(|v| v.as_str()).unwrap_or("不明なエラー");
+    Err(anyhow!("プロジェクト更新失敗: {} ({})", msg, status))
 }

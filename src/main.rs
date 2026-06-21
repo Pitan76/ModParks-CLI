@@ -1,4 +1,4 @@
-﻿use clap::{Parser, Subcommand, ArgAction};
+use clap::{Parser, Subcommand, ArgAction};
 mod api_client;
 mod api_models;
 mod cache;
@@ -22,7 +22,7 @@ struct Cli {
     version: Option<bool>,
 
     #[command(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
 }
 
 #[derive(Subcommand)]
@@ -48,6 +48,31 @@ enum Commands {
 
     /// 指定スラッグのプロジェクト詳細を取得
     Project { slug: String },
+
+    /// プロジェクトを新規作成
+    ProjectCreate {
+        #[arg(long)]
+        name: String,
+        #[arg(long)]
+        slug: String,
+        #[arg(long, default_value_t = String::new())]
+        description: String,
+        #[arg(long, default_value = "mod")]
+        project_type: String,
+    },
+
+    /// プロジェクト情報を編集
+    ProjectEdit {
+        slug: String,
+        #[arg(long)]
+        name: Option<String>,
+        #[arg(long)]
+        new_slug: Option<String>,
+        #[arg(long)]
+        description: Option<String>,
+        #[arg(long)]
+        project_type: Option<String>,
+    },
 
     /// プロジェクトのバージョン一覧を取得
     Versions {
@@ -90,32 +115,44 @@ enum Commands {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
-    match cli.command {
-        Commands::Login { api_key } => commands::login(&api_key).await?,
-        Commands::Update => commands::update()?,
-        Commands::Logout => {
-            let mut cfg = config::Config::load()?;
-            cfg.api_key = String::new();
-            cfg.save()?;
-            println!("ログアウトしました (API キーを削除しました)。");
+    
+    if let Some(cmd) = cli.command {
+        match cmd {
+            Commands::Login { api_key } => commands::login(&api_key).await?,
+            Commands::Update => commands::update()?,
+            Commands::Logout => {
+                let mut cfg = config::Config::load()?;
+                cfg.api_key = String::new();
+                cfg.save()?;
+                println!("ログアウトしました (API キーを削除しました)。");
+            }
+            Commands::Projects { page, page_opt, limit } => {
+                let p = page_opt.unwrap_or(page);
+                let offset = p.saturating_sub(1) * limit;
+                commands::list_projects(limit, offset).await?
+            }
+            Commands::Project { slug } => commands::get_project(&slug).await?,
+            Commands::ProjectCreate { name, slug, description, project_type } => {
+                commands::create_project(name, slug, description, project_type).await?
+            }
+            Commands::ProjectEdit { slug, name, new_slug, description, project_type } => {
+                commands::update_project(slug, name, new_slug, description, project_type).await?
+            }
+            Commands::Versions { slug, limit } => commands::list_versions(&slug, limit).await?,
+            Commands::Ideas { limit } => commands::list_ideas(limit).await?,
+            Commands::Idea { id } => commands::get_idea(&id).await?,
+            Commands::Comments { slug } => commands::list_comments(&slug).await?,
+            Commands::CommentPost { slug, content } => commands::post_comment(&slug, &content).await?,
+            Commands::Sync { slug } => commands::sync_project(&slug).await?,
+            Commands::Tui => tui::run_tui().await?,
+            Commands::CacheClear => {
+                let n = cache::clear()?;
+                println!("{}件のキャッシュを削除しました。", n);
+            }
         }
-        Commands::Projects { page, page_opt, limit } => {
-            let p = page_opt.unwrap_or(page);
-            let offset = p.saturating_sub(1) * limit;
-            commands::list_projects(limit, offset).await?
-        }
-        Commands::Project { slug } => commands::get_project(&slug).await?,
-        Commands::Versions { slug, limit } => commands::list_versions(&slug, limit).await?,
-        Commands::Ideas { limit } => commands::list_ideas(limit).await?,
-        Commands::Idea { id } => commands::get_idea(&id).await?,
-        Commands::Comments { slug } => commands::list_comments(&slug).await?,
-        Commands::CommentPost { slug, content } => commands::post_comment(&slug, &content).await?,
-        Commands::Sync { slug } => commands::sync_project(&slug).await?,
-        Commands::Tui => tui::run_tui().await?,
-        Commands::CacheClear => {
-            let n = cache::clear()?;
-            println!("{}件のキャッシュを削除しました。", n);
-        }
+    } else {
+        // 引数なしの場合（ダブルクリック起動等）、自動的にTUIを起動する
+        tui::run_tui().await?;
     }
     Ok(())
 }

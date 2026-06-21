@@ -265,3 +265,17 @@ pub fn split_login(area: Rect) -> (Rect, Rect, Rect, Rect, Rect) {
         .split(area);
     (chunks[0], chunks[1], chunks[2], chunks[3], chunks[4])
 }
+
+pub fn split_project_form(area: Rect) -> (Rect, Rect, Rect, Rect, Rect) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // Name
+            Constraint::Length(3), // Slug
+            Constraint::Length(3), // Description
+            Constraint::Length(3), // Type
+            Constraint::Min(0),    // Message
+        ])
+        .split(area);
+    (chunks[0], chunks[1], chunks[2], chunks[3], chunks[4])
+}
