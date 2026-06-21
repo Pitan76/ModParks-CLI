@@ -1,7 +1,7 @@
 class ModparksCli < Formula
   desc "CLI for ModParks"
   homepage "https://github.com/Pitan76/ModParks-CLI"
-  version "0.0.5"
+  version "0.0.6"
   
   if OS.mac?
     url "https://github.com/Pitan76/ModParks-CLI/releases/download/v0.0.1/modparks-cli-v0.0.1-macos-x86_64.tar.gz"
