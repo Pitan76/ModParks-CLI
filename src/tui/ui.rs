@@ -220,12 +220,19 @@ pub fn render_input(f: &mut Frame, area: Rect, title: &str, input: &Input, is_pa
 
     let para = Paragraph::new(text)
         .style(Style::default().fg(COLOR_FG))
-        .block(Block::default().borders(Borders::ALL).title(format!(" {} ", title)).border_style(border_style));
+        .block(Block::default().borders(Borders::ALL).title(format!(" {} ", title)).border_style(border_style))
+        .wrap(Wrap { trim: false });
     f.render_widget(para, area);
     
     // カーソル表示
     if is_active {
-        f.set_cursor_position((area.x + 1 + input.visual_cursor() as u16, area.y + 1));
+        let width = area.width.saturating_sub(2).max(1);
+        let cx = (input.visual_cursor() as u16) % width;
+        let cy = (input.visual_cursor() as u16) / width;
+        
+        let cx_actual = (area.x + 1 + cx).min(area.right().saturating_sub(2));
+        let cy_actual = (area.y + 1 + cy).min(area.bottom().saturating_sub(2));
+        f.set_cursor_position((cx_actual, cy_actual));
     }
 }
 
@@ -272,9 +279,9 @@ pub fn split_project_form(area: Rect) -> (Rect, Rect, Rect, Rect, Rect) {
         .constraints([
             Constraint::Length(3), // Name
             Constraint::Length(3), // Slug
-            Constraint::Length(3), // Description
+            Constraint::Min(5),    // Description
             Constraint::Length(3), // Type
-            Constraint::Min(0),    // Message
+            Constraint::Length(3), // Message
         ])
         .split(area);
     (chunks[0], chunks[1], chunks[2], chunks[3], chunks[4])

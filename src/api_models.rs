@@ -102,6 +102,13 @@ pub struct ApiComment {
     pub created_at: i64,
 }
 
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct AuthMe {
+    pub id: String,
+    pub role: String,
+    pub username: String,
+}
+
 #[derive(Debug, Serialize)]
 pub struct CreateProjectReq {
     pub name: String,
