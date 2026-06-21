@@ -21,5 +21,5 @@ pub fn poll_event() -> Result<Option<AppEvent>> {
 }
 
 pub fn is_quit(key: &KeyEvent) -> bool {
-    (key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL))
+    key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL)
 }
