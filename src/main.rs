@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ArgAction};
 mod api_client;
 mod api_models;
 mod commands;
@@ -6,34 +6,64 @@ mod config;
 mod pagination;
 
 #[derive(Parser)]
-#[command(name = "modparks", version = "0.1.0", author = "Pitan76", about = "ModParks CLI")]
+#[command(
+    name = "modparks",
+    version,
+    author = "Pitan76",
+    about = "ModParks CLI",
+    // -v と -V の両方でバージョンを表示
+    disable_version_flag = true,
+)]
 struct Cli {
+    /// バージョンを表示
+    #[arg(short = 'v', short_alias = 'V', long = "version", action = ArgAction::Version)]
+    version: Option<bool>,
+
     #[command(subcommand)]
     command: Commands,
 }
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Save API key to config (login)
+    /// API キーを保存する
     Login { api_key: String },
-    /// List projects
+
+    /// プロジェクト一覧を取得
+    ///
+    /// PAGE を指定するとそのページを取得します（1始まり）。
+    /// 例: modparks-cli projects 2
     Projects {
+        /// ページ番号（1始まり）。例: projects 2 または projects --page 2
+        #[arg(default_value_t = 1, long = "page")]
+        page: u32,
+        /// 1ページあたりの件数
         #[arg(short, long, default_value_t = 20)]
         limit: u32,
-        #[arg(short, long, default_value_t = 0)]
-        offset: u32,
     },
-    /// Get a specific project by slug
+
+    /// 指定スラッグのプロジェクト詳細を取得
     Project { slug: String },
-    /// List versions of a project
-    Versions { slug: String, #[arg(short, long, default_value_t = 20)] limit: u32 },
-    /// List ideas
-    Ideas { #[arg(short, long, default_value_t = 20)] limit: u32 },
-    /// List comments of a project
+
+    /// プロジェクトのバージョン一覧を取得
+    Versions {
+        slug: String,
+        #[arg(short, long, default_value_t = 20)]
+        limit: u32,
+    },
+
+    /// アイデア一覧を取得
+    Ideas {
+        #[arg(short, long, default_value_t = 20)]
+        limit: u32,
+    },
+
+    /// プロジェクトのコメント一覧を取得
     Comments { slug: String },
-    /// Post a comment to a project
+
+    /// プロジェクトにコメントを投稿
     CommentPost { slug: String, content: String },
-    /// Sync a project with external platform
+
+    /// プロジェクトを外部プラットフォームと同期
     Sync { slug: String },
 }
 
@@ -42,7 +72,10 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     match cli.command {
         Commands::Login { api_key } => commands::login(&api_key).await?,
-        Commands::Projects { limit, offset } => commands::list_projects(limit, offset).await?,
+        Commands::Projects { page, limit } => {
+            let offset = (page.saturating_sub(1)) * limit;
+            commands::list_projects(limit, offset).await?
+        }
         Commands::Project { slug } => commands::get_project(&slug).await?,
         Commands::Versions { slug, limit } => commands::list_versions(&slug, limit).await?,
         Commands::Ideas { limit } => commands::list_ideas(limit).await?,
