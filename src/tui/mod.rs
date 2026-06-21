@@ -464,6 +464,12 @@ pub async fn run_tui() -> Result<()> {
                                 fetch_ideas(&mut app).await;
                             }
                         }
+                        KeyCode::Char('L') => {
+                            // ログアウト
+                            app.cfg.api_key = String::new();
+                            let _ = app.cfg.save();
+                            app.screen = Screen::Login;
+                        }
                         KeyCode::Char('p') => {
                             app.screen = Screen::ProjectList;
                             if app.projects.is_empty() { fetch_projects(&mut app).await; }

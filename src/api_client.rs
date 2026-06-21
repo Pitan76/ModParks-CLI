@@ -1,4 +1,4 @@
-﻿// src/api_client.rs
+// src/api_client.rs
 use anyhow::{Result, Context, anyhow};
 use reqwest::{Client, header::{HeaderMap, HeaderValue, USER_AGENT, AUTHORIZATION}};
 use serde::{Serialize, Deserialize};
@@ -62,6 +62,7 @@ struct LoginPayload<'a> {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 pub struct LoginResponse {
     #[serde(rename = "apiKey")]
     pub api_key: Option<String>,
