@@ -205,20 +205,28 @@ pub fn render_help(f: &mut Frame, area: Rect) {
     f.render_widget(para, area);
 }
 
-pub fn render_input(f: &mut Frame, area: Rect, title: &str, input: &Input, is_password: bool) {
+pub fn render_input(f: &mut Frame, area: Rect, title: &str, input: &Input, is_password: bool, is_active: bool) {
     let text = if is_password {
         "*".repeat(input.value().chars().count())
     } else {
         input.value().to_string()
     };
     
+    let border_style = if is_active {
+        Style::default().fg(COLOR_FG).add_modifier(Modifier::BOLD)
+    } else {
+        Style::default().fg(COLOR_DIM)
+    };
+
     let para = Paragraph::new(text)
         .style(Style::default().fg(COLOR_FG))
-        .block(Block::default().borders(Borders::ALL).title(format!(" {} ", title)).border_style(Style::default().fg(COLOR_ACCENT)));
+        .block(Block::default().borders(Borders::ALL).title(format!(" {} ", title)).border_style(border_style));
     f.render_widget(para, area);
     
     // カーソル表示
-    f.set_cursor_position((area.x + 1 + input.visual_cursor() as u16, area.y + 1));
+    if is_active {
+        f.set_cursor_position((area.x + 1 + input.visual_cursor() as u16, area.y + 1));
+    }
 }
 
 pub fn split_layout(area: Rect) -> (Rect, Rect, Rect) {

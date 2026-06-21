@@ -80,11 +80,12 @@ impl App {
         idea_state.select(Some(0));
         
         let initial_screen = if cfg.api_key.is_empty() { Screen::Login } else { Screen::ProjectList };
+        let initial_input = if cfg.api_key.is_empty() { InputMode::LoginId } else { InputMode::Normal };
 
         Self {
             screen: initial_screen,
             prev_screen: None,
-            input_mode: InputMode::Normal,
+            input_mode: initial_input,
             projects: vec![],
             ideas: vec![],
             project_state,
@@ -255,13 +256,13 @@ pub async fn run_tui() -> Result<()> {
                     f.render_widget(ratatui::widgets::Paragraph::new(type_txt).block(ratatui::widgets::Block::default().borders(ratatui::widgets::Borders::ALL).title(" ログイン方式 (Tabで切替) ")), type_area);
                     
                     if app.login_type == LoginType::Password {
-                        render_input(f, id_area, "ID / Email (Enterで次へ)", &app.login_id_input, false);
-                        render_input(f, pw_area, "Password (Enterでログイン)", &app.login_pw_input, true);
+                        render_input(f, id_area, "ID / Email (Enterで次へ)", &app.login_id_input, false, app.input_mode == InputMode::LoginId);
+                        render_input(f, pw_area, "Password (Enterでログイン)", &app.login_pw_input, true, app.input_mode == InputMode::LoginPassword);
                         if app.login_requires_totp {
-                            render_input(f, totp_area, "2FA Code (Enterでログイン)", &app.login_totp_input, false);
+                            render_input(f, totp_area, "2FA Code (Enterでログイン)", &app.login_totp_input, false, app.input_mode == InputMode::LoginTotp);
                         }
                     } else {
-                        render_input(f, id_area, "API Key (Enterでログイン)", &app.login_id_input, true);
+                        render_input(f, id_area, "API Key (Enterでログイン)", &app.login_id_input, true, app.input_mode == InputMode::LoginId);
                     }
                     
                     if let Some(err) = &app.error_msg {
@@ -275,7 +276,7 @@ pub async fn run_tui() -> Result<()> {
                     let page_str = format!("{}件表示 | {}ページ", app.limit, app.project_page);
                     render_header(f, header_area, "プロジェクト", Some(&page_str));
                     let (search_area, list_area) = split_search(body_area);
-                    render_input(f, search_area, "検索 (/ で入力)", &app.search_input, false);
+                    render_input(f, search_area, "検索 (/ で入力)", &app.search_input, false, app.input_mode == InputMode::Search);
                     
                     if let Some(err) = &app.error_msg {
                         render_error(f, list_area, err);
@@ -469,6 +470,7 @@ pub async fn run_tui() -> Result<()> {
                             app.cfg.api_key = String::new();
                             let _ = app.cfg.save();
                             app.screen = Screen::Login;
+                            app.input_mode = InputMode::LoginId;
                         }
                         KeyCode::Char('p') => {
                             app.screen = Screen::ProjectList;
