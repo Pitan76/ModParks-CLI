@@ -1,0 +1,63 @@
+﻿name: Update APT Repository
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  update-apt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          # gh-pagesブランチがない場合はエラーになるため、初期化処理が必要
+          continue-on-error: true
+
+      - name: Initialize gh-pages branch if not exists
+        if: steps.checkout.outcome != 'success'
+        run: |
+          git checkout --orphan gh-pages
+          git rm -rf .
+          echo "APT Repository for ModParks CLI" > index.html
+          mkdir -p pool/main/m/modparks-cli
+          mkdir -p dists/stable/main/binary-amd64
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "Initialize apt repository"
+          git push origin gh-pages
+
+      - name: Download Deb from latest release
+        run: |
+          mkdir -p pool/main/m/modparks-cli
+          wget -q https://github.com/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/modparks-cli-${{ github.event.release.tag_name }}-ubuntu-x86_64.deb -P pool/main/m/modparks-cli/ || true
+
+      - name: Generate Packages and Release files
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev
+
+          cd dists/stable/main/binary-amd64
+          dpkg-scanpackages ../../../../pool/main/m/modparks-cli /dev/null > Packages
+          gzip -k -f Packages
+          cd ../../../..
+
+          # Release file generation (simple version)
+          echo "Origin: ModParks" > dists/stable/Release
+          echo "Label: ModParks" >> dists/stable/Release
+          echo "Suite: stable" >> dists/stable/Release
+          echo "Codename: stable" >> dists/stable/Release
+          echo "Architectures: amd64" >> dists/stable/Release
+          echo "Components: main" >> dists/stable/Release
+
+      - name: Commit and Push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Update APT repository for ${{ github.event.release.tag_name }}" || echo "No changes to commit"
+          git push origin gh-pages
