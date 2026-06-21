@@ -1,9 +1,11 @@
 use clap::{Parser, Subcommand, ArgAction};
 mod api_client;
 mod api_models;
+mod cache;
 mod commands;
 mod config;
 mod pagination;
+mod tui;
 
 #[derive(Parser)]
 #[command(
@@ -71,6 +73,12 @@ enum Commands {
 
     /// プロジェクトを外部プラットフォームと同期
     Sync { slug: String },
+
+    /// TUI を起動する
+    Tui,
+
+    /// キャッシュをクリアする
+    CacheClear,
 }
 
 #[tokio::main]
@@ -90,6 +98,11 @@ async fn main() -> anyhow::Result<()> {
         Commands::Comments { slug } => commands::list_comments(&slug).await?,
         Commands::CommentPost { slug, content } => commands::post_comment(&slug, &content).await?,
         Commands::Sync { slug } => commands::sync_project(&slug).await?,
+        Commands::Tui => tui::run_tui().await?,
+        Commands::CacheClear => {
+            let n = cache::clear()?;
+            println!("{}件のキャッシュを削除しました。", n);
+        }
     }
     Ok(())
 }

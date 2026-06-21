@@ -4,7 +4,7 @@ use dirs::config_dir;
 use serde::{Deserialize, Serialize};
 use anyhow::{Result, Context};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub api_base_url: String,
     pub api_key: String,
