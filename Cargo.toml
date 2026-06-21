@@ -1,6 +1,6 @@
 [package]
 name = "modparks-cli"
-version = "0.0.4"
+version = "0.0.5"
 authors = ["Pitan76 <admin@pitan76.net>"]
 edition = "2021"
 description = "CLI for ModParks"
@@ -20,13 +20,7 @@ unicode-width = "0.2"
 tui-input = "0.10"
 self_update = { version = "0.44.0", default-features = false, features = ["archive-tar", "archive-zip", "compression-flate2", "rustls", "reqwest"] }
 
-[[bin]]
-name = "modparks-cli"
-path = "src/main.rs"
 
-[[bin]]
-name = "modparks-tui"
-path = "src/main.rs"
 [package.metadata.deb]
 maintainer = "Pitan76"
 copyright = "2026, Pitan76"
