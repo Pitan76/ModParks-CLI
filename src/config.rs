@@ -5,6 +5,11 @@ use serde::{Deserialize, Serialize};
 use anyhow::{Result, Context};
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct Config {
+    pub api_base_url: String,
+    pub api_key: String,
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -13,6 +18,8 @@ impl Default for Config {
         }
     }
 }
+
+impl Config {
     pub fn get_path() -> Result<PathBuf> {
         let mut path = config_dir().context("Unable to locate config directory")?;
         path.push("modparks-cli");
@@ -27,8 +34,10 @@ impl Default for Config {
             // Return default config
             return Ok(Self::default());
         }
-        let content = fs::read_to_string(&path).with_context(|| format!("Failed to read {}", path.display()))?;
-        let mut cfg: Config = serde_json::from_str(&content).context("Failed to parse config JSON")?;
+        let content = fs::read_to_string(&path)
+            .with_context(|| format!("Failed to read {}", path.display()))?;
+        let mut cfg: Config = serde_json::from_str(&content)
+            .context("Failed to parse config JSON")?;
         if cfg.api_base_url.is_empty() {
             cfg.api_base_url = Self::default().api_base_url;
         }
@@ -37,8 +46,10 @@ impl Default for Config {
 
     pub fn save(&self) -> Result<()> {
         let path = Self::get_path()?;
-        let json = serde_json::to_string_pretty(self).context("Failed to serialize config")?;
-        fs::write(&path, json).with_context(|| format!("Failed to write {}", path.display()))?;
+        let json = serde_json::to_string_pretty(self)
+            .context("Failed to serialize config")?;
+        fs::write(&path, json)
+            .with_context(|| format!("Failed to write {}", path.display()))?;
         Ok(())
     }
 }
