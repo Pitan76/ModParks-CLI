@@ -10,9 +10,6 @@
 
 ## ビルド手順
 ```bash
-# ルートディレクトリへ移動（CLI ディレクトリ）
-cd e:/workspace/ptms76/modparks/cli
-
 # 依存パッケージを取得し、リリースビルドを作成
 cargo build --release
 ```
