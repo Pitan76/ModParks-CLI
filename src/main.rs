@@ -79,6 +79,9 @@ enum Commands {
 
     /// キャッシュをクリアする
     CacheClear,
+
+    /// ログアウトする (API キーを削除)
+    Logout,
 }
 
 #[tokio::main]
@@ -86,6 +89,12 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     match cli.command {
         Commands::Login { api_key } => commands::login(&api_key).await?,
+        Commands::Logout => {
+            let mut cfg = config::Config::load()?;
+            cfg.api_key = String::new();
+            cfg.save()?;
+            println!("ログアウトしました (API キーを削除しました)。");
+        }
         Commands::Projects { page, page_opt, limit } => {
             let p = page_opt.unwrap_or(page);
             let offset = p.saturating_sub(1) * limit;

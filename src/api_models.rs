@@ -22,6 +22,7 @@ pub struct ApiProject {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+#[allow(dead_code)]
 pub struct ApiProjectDetail {
     pub id: String,
     pub slug: String,
@@ -61,6 +62,7 @@ pub struct Author {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+#[allow(dead_code)]
 pub struct Dependency {
     pub id: String,
     #[serde(rename = "dependencyType")]
@@ -69,6 +71,7 @@ pub struct Dependency {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+#[allow(dead_code)]
 pub struct DependencyProject {
     pub id: String,
     pub slug: String,
