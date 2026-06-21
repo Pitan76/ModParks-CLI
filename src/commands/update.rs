@@ -7,7 +7,7 @@ pub fn update() -> Result<()> {
 
     let status = self_update::backends::github::Update::configure()
         .repo_owner("Pitan76")
-        .repo_name("ModParks")
+        .repo_name("ModParks-CLI")
         .bin_name("modparks-cli")
         .show_download_progress(true)
         .current_version(cargo_crate_version!())
