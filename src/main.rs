@@ -33,9 +33,12 @@ enum Commands {
     /// PAGE を指定するとそのページを取得します（1始まり）。
     /// 例: modparks-cli projects 2
     Projects {
-        /// ページ番号（1始まり）。例: projects 2 または projects --page 2
-        #[arg(default_value_t = 1, long = "page")]
+        /// ページ番号（1始まり）。例: projects 2
+        #[arg(default_value_t = 1)]
         page: u32,
+        /// --page オプション（位置引数と同じ）
+        #[arg(long = "page", hide = true)]
+        page_opt: Option<u32>,
         /// 1ページあたりの件数
         #[arg(short, long, default_value_t = 20)]
         limit: u32,
@@ -75,8 +78,9 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     match cli.command {
         Commands::Login { api_key } => commands::login(&api_key).await?,
-        Commands::Projects { page, limit } => {
-            let offset = (page.saturating_sub(1)) * limit;
+        Commands::Projects { page, page_opt, limit } => {
+            let p = page_opt.unwrap_or(page);
+            let offset = p.saturating_sub(1) * limit;
             commands::list_projects(limit, offset).await?
         }
         Commands::Project { slug } => commands::get_project(&slug).await?,
