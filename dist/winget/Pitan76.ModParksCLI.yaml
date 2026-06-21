@@ -1,0 +1,13 @@
+﻿PackageIdentifier: Pitan76.ModParksCLI
+PackageVersion: 0.1.0
+PackageName: ModParks CLI
+Publisher: Pitan76
+License: MIT
+ShortDescription: CLI for ModParks API
+Installers:
+  - Architecture: x64
+    InstallerType: msi
+    InstallerUrl: https://github.com/Pitan76/ModParks/releases/download/v0.1.0/modparks-cli-v0.1.0-windows-x86_64.msi
+    InstallerSha256: REPLACE_WITH_SHA256
+ManifestType: singleton
+ManifestVersion: 1.2.0

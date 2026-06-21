@@ -48,29 +48,67 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
+      - name: Install cross-compilation tools (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-x86-64-linux-gnu libc6-dev-amd64-cross
+
       - name: Build release binary
         run: cargo build --release --locked --target ${{ matrix.target }}
 
-      - name: Rename binary with version (Windows)
+      - name: Create Deb Package (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cargo install cargo-deb
+          cargo deb --target ${{ matrix.target }}
+
+      - name: Create MSI Package (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          cargo install cargo-wix
+          cargo wix --nocapture
+
+      - name: Package artifacts (Windows)
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
           $tag = "${{ github.ref_name }}"
-          Copy-Item target/${{ matrix.target }}/release/modparks-cli.exe "modparks-cli-${tag}-windows-x86_64.exe"
+          # Archive binary as zip
+          Compress-Archive -Path target/${{ matrix.target }}/release/modparks-cli.exe -DestinationPath modparks-cli-${tag}-windows-x86_64.zip
+          # Copy MSI
+          if (Test-Path target/wix/modparks-cli*.msi) {
+            Copy-Item target/wix/modparks-cli*.msi "modparks-cli-${tag}-windows-x86_64.msi"
+          }
 
-      - name: Rename binary with version (Unix)
+      - name: Package artifacts (Unix)
         if: matrix.os != 'windows-latest'
         shell: bash
         run: |
           tag="${{ github.ref_name }}"
           os_name=$(echo "${{ matrix.os }}" | cut -d'-' -f1)
-          cp target/${{ matrix.target }}/release/modparks-cli "modparks-cli-${tag}-${os_name}-x86_64"
+          # Archive binary as tar.gz
+          tar -czvf "modparks-cli-${tag}-${os_name}-x86_64.tar.gz" -C target/${{ matrix.target }}/release modparks-cli
+          # Copy DEB
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            cp target/${{ matrix.target }}/debian/*.deb "modparks-cli-${tag}-ubuntu-x86_64.deb"
+          fi
+          # Calculate SHA256 for macOS (useful for Homebrew/MacPorts)
+          if [ "${{ matrix.os }}" = "macos-latest" ]; then
+            shasum -a 256 "modparks-cli-${tag}-${os_name}-x86_64.tar.gz" > "modparks-cli-${tag}-${os_name}-x86_64.tar.gz.sha256"
+          fi
 
-      - name: Upload artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: modparks-cli-*
+          path: |
+            modparks-cli-*.zip
+            modparks-cli-*.tar.gz
+            modparks-cli-*.msi
+            modparks-cli-*.deb
+            modparks-cli-*.sha256
           if-no-files-found: error
 
   create-release:
@@ -95,23 +133,18 @@ jobs:
             ## ModParks CLI ${{ github.ref_name }}
 
             ### インストール方法
-            下記のアセットからOSに対応した実行ファイルをダウンロードしてください。
-            - **Windows**: `modparks-cli-${{ github.ref_name }}-windows-x86_64.exe`
-            - **macOS**: `modparks-cli-${{ github.ref_name }}-macos-x86_64`
-            - **Linux**: `modparks-cli-${{ github.ref_name }}-ubuntu-x86_64`
 
-            ダウンロード後、パスの通ったディレクトリに配置し（macOS / Linux の場合は `chmod +x` で実行権限を付与してください）、コマンドとして実行します。
+            **Windows (MSI Installer)**
+            `modparks-cli-${{ github.ref_name }}-windows-x86_64.msi` をダウンロードして実行してください。
 
-            ### 主なコマンド
+            **Ubuntu/Debian (Deb Package)**
+            `modparks-cli-${{ github.ref_name }}-ubuntu-x86_64.deb` をダウンロードし、以下を実行してください。
+            ```bash
+            sudo dpkg -i modparks-cli-${{ github.ref_name }}-ubuntu-x86_64.deb
             ```
-            modparks-cli login <API_KEY>   # API キーを設定
-            modparks-cli projects          # プロジェクト一覧
-            modparks-cli projects 2        # 2ページ目
-            modparks-cli project <slug>    # プロジェクト詳細
-            modparks-cli ideas             # アイデア一覧
-            modparks-cli tui               # TUI を起動
-            modparks-cli cache-clear       # キャッシュをクリア
-            ```
+
+            **ポータブル版 (ZIP / Tar.gz)**
+            お使いのOSに対応したアーカイブファイルをダウンロードし、解凍してパスの通ったディレクトリに配置してください。
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
           files: artifacts/*
