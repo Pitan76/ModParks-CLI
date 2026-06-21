@@ -24,6 +24,8 @@ enum Screen {
     Login,
     ProjectList,
     ProjectDetail(usize),
+    ProjectCreate,
+    ProjectEdit(String),
     IdeaList,
     IdeaDetail(usize),
     Help,
@@ -36,6 +38,7 @@ enum InputMode {
     LoginId,
     LoginPassword,
     LoginTotp,
+    ProjectForm(usize),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -67,6 +70,8 @@ struct App {
     login_totp_input: Input,
     login_requires_totp: bool,
     
+    project_form_inputs: Vec<Input>,
+
     loading: bool,
     error_msg: Option<String>,
     cfg: Config,
@@ -99,6 +104,7 @@ impl App {
             login_pw_input: Input::default(),
             login_totp_input: Input::default(),
             login_requires_totp: false,
+            project_form_inputs: vec![Input::default(); 4],
             loading: true,
             error_msg: None,
             cfg,
@@ -117,7 +123,7 @@ impl App {
             match &self.screen {
                 Screen::ProjectDetail(_) => { self.screen = Screen::ProjectList; }
                 Screen::IdeaDetail(_)    => { self.screen = Screen::IdeaList; }
-                Screen::Help             => { self.screen = Screen::ProjectList; }
+                Screen::Help             | Screen::ProjectCreate | Screen::ProjectEdit(_) => { self.screen = Screen::ProjectList; }
                 _                        => {}
             }
         }
@@ -295,7 +301,26 @@ pub async fn run_tui() -> Result<()> {
                     if let Some(project) = app.projects.get(*idx) {
                         render_project_detail(f, body_area, project);
                     }
-                    render_footer(f, footer_area, &[("b", "戻る"), ("q", "終了")]);
+                    render_footer(f, footer_area, &[("b", "戻る"), ("e", "編集"), ("q", "終了")]);
+                }
+                Screen::ProjectCreate | Screen::ProjectEdit(_) => {
+                    let title = if matches!(app.screen, Screen::ProjectCreate) { "プロジェクト作成" } else { "プロジェクト編集" };
+                    render_header(f, header_area, title, None);
+                    let (name_a, slug_a, desc_a, type_a, msg_a) = split_project_form(body_area);
+                    
+                    let focus = if let InputMode::ProjectForm(i) = app.input_mode { i } else { 99 };
+                    
+                    render_input(f, name_a, "Name", &app.project_form_inputs[0], false, focus == 0);
+                    render_input(f, slug_a, "Slug", &app.project_form_inputs[1], false, focus == 1);
+                    render_input(f, desc_a, "Description", &app.project_form_inputs[2], false, focus == 2);
+                    render_input(f, type_a, "Type (mod/plugin)", &app.project_form_inputs[3], false, focus == 3);
+
+                    if let Some(err) = &app.error_msg {
+                        render_error(f, msg_a, err);
+                    } else if app.loading {
+                        render_loading(f, msg_a);
+                    }
+                    render_footer(f, footer_area, &[("Tab", "項目移動"), ("Enter", "保存"), ("Esc", "キャンセル")]);
                 }
                 Screen::IdeaList => {
                     let page_str = format!("{}件表示 | {}ページ", app.limit, app.idea_page);
@@ -336,6 +361,16 @@ pub async fn run_tui() -> Result<()> {
                     if app.input_mode != InputMode::Normal {
                         match key.code {
                             KeyCode::Esc => { app.input_mode = InputMode::Normal; }
+                            KeyCode::Tab => {
+                                if let InputMode::ProjectForm(focus) = app.input_mode {
+                                    app.input_mode = InputMode::ProjectForm((focus + 1) % 4);
+                                }
+                            }
+                            KeyCode::BackTab => {
+                                if let InputMode::ProjectForm(focus) = app.input_mode {
+                                    app.input_mode = InputMode::ProjectForm((focus + 3) % 4);
+                                }
+                            }
                             KeyCode::Enter => {
                                 match app.input_mode {
                                     InputMode::Search => {
@@ -405,6 +440,42 @@ pub async fn run_tui() -> Result<()> {
                                         }
                                         app.loading = false;
                                     }
+                                    InputMode::ProjectForm(_) => {
+                                        app.loading = true;
+                                        app.error_msg = None;
+                                        let name = app.project_form_inputs[0].value().to_string();
+                                        let slug = app.project_form_inputs[1].value().to_string();
+                                        let description = app.project_form_inputs[2].value().to_string();
+                                        let p_type = app.project_form_inputs[3].value().to_string();
+                                        let p_type = if p_type.is_empty() { "mod".to_string() } else { p_type };
+                                        
+                                        let mut is_success = false;
+                                        if let Screen::ProjectCreate = app.screen {
+                                            let req = crate::api_models::CreateProjectReq { name, slug, description, project_type: p_type };
+                                            match crate::api_client::create_project(&app.cfg, &req).await {
+                                                Ok(_) => is_success = true,
+                                                Err(e) => app.error_msg = Some(e.to_string()),
+                                            }
+                                        } else if let Screen::ProjectEdit(ref orig_slug) = app.screen {
+                                            let req = crate::api_models::UpdateProjectReq { 
+                                                name: Some(name), 
+                                                slug: Some(slug), 
+                                                description: Some(description), 
+                                                project_type: Some(p_type) 
+                                            };
+                                            match crate::api_client::update_project(&app.cfg, orig_slug, &req).await {
+                                                Ok(_) => is_success = true,
+                                                Err(e) => app.error_msg = Some(e.to_string()),
+                                            }
+                                        }
+                                        
+                                        if is_success {
+                                            app.input_mode = InputMode::Normal;
+                                            app.screen = Screen::ProjectList;
+                                            fetch_projects(&mut app).await;
+                                        }
+                                        app.loading = false;
+                                    }
                                     _ => {}
                                 }
                             }
@@ -415,6 +486,7 @@ pub async fn run_tui() -> Result<()> {
                                     InputMode::LoginId => { app.login_id_input.handle_event(&req); }
                                     InputMode::LoginPassword => { app.login_pw_input.handle_event(&req); }
                                     InputMode::LoginTotp => { app.login_totp_input.handle_event(&req); }
+                                    InputMode::ProjectForm(focus) => { app.project_form_inputs[focus].handle_event(&req); }
                                     _ => {}
                                 }
                             }
@@ -494,6 +566,29 @@ pub async fn run_tui() -> Result<()> {
                             if app.screen == Screen::ProjectList { fetch_projects(&mut app).await; }
                             else if app.screen == Screen::IdeaList { fetch_ideas(&mut app).await; }
                             app.cfg.cache_enabled = true;
+                        }
+                        KeyCode::Char('c') => {
+                            if app.screen == Screen::ProjectList {
+                                app.prev_screen = Some(app.screen.clone());
+                                app.screen = Screen::ProjectCreate;
+                                app.project_form_inputs = vec![Input::default(); 4];
+                                app.input_mode = InputMode::ProjectForm(0);
+                            }
+                        }
+                        KeyCode::Char('e') => {
+                            if let Screen::ProjectDetail(idx) = app.screen {
+                                if let Some(p) = app.projects.get(idx) {
+                                    app.prev_screen = Some(app.screen.clone());
+                                    app.screen = Screen::ProjectEdit(p.slug.clone());
+                                    app.project_form_inputs = vec![
+                                        Input::default().with_value(p.name.clone()),
+                                        Input::default().with_value(p.slug.clone()),
+                                        Input::default().with_value(p.description.clone().unwrap_or_default()),
+                                        Input::default().with_value(p.project_type.clone()),
+                                    ];
+                                    app.input_mode = InputMode::ProjectForm(0);
+                                }
+                            }
                         }
                         _ => {}
                     }

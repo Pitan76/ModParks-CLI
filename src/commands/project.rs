@@ -1,7 +1,7 @@
 use anyhow::{Result, anyhow};
 use crate::config::Config;
-use crate::api_client::cached_get;
-use crate::api_models::ApiProject;
+use crate::api_client::{cached_get, create_project as api_create_project, update_project as api_update_project};
+use crate::api_models::{ApiProject, CreateProjectReq, UpdateProjectReq};
 use crate::pagination::PaginatedResponse;
 
 pub async fn list_projects(limit: u32, offset: u32) -> Result<()> {
@@ -36,5 +36,33 @@ pub async fn get_project(slug: &str) -> Result<()> {
             println!("タグ:     {}", tags.join(", "));
         }
     }
+    Ok(())
+}
+
+pub async fn create_project(name: String, slug: String, description: String, project_type: String) -> Result<()> {
+    let cfg = Config::load()?;
+    let req = CreateProjectReq {
+        name,
+        slug,
+        description,
+        project_type,
+    };
+    
+    api_create_project(&cfg, &req).await?;
+    println!("プロジェクトを作成しました！");
+    Ok(())
+}
+
+pub async fn update_project(slug: String, name: Option<String>, new_slug: Option<String>, description: Option<String>, project_type: Option<String>) -> Result<()> {
+    let cfg = Config::load()?;
+    let req = UpdateProjectReq {
+        name,
+        slug: new_slug,
+        description,
+        project_type,
+    };
+    
+    api_update_project(&cfg, &slug, &req).await?;
+    println!("プロジェクトを更新しました！");
     Ok(())
 }
