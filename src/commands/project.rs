@@ -1,10 +1,8 @@
-// src/commands/project.rs
 use anyhow::{Result, anyhow};
 use crate::config::Config;
 use crate::api_client::build_client;
 use crate::api_models::ApiProject;
-use crate::pagination::{PaginatedResponse, Meta};
-use reqwest::Client;
+use crate::pagination::PaginatedResponse;
 
 pub async fn list_projects(limit: u32, offset: u32) -> Result<()> {
     let cfg = Config::load()?;
