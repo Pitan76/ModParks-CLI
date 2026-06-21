@@ -72,6 +72,8 @@ struct App {
     
     project_form_inputs: Vec<Input>,
 
+    current_user: Option<crate::api_models::AuthMe>,
+
     loading: bool,
     error_msg: Option<String>,
     cfg: Config,
@@ -105,6 +107,7 @@ impl App {
             login_totp_input: Input::default(),
             login_requires_totp: false,
             project_form_inputs: vec![Input::default(); 4],
+            current_user: None,
             loading: true,
             error_msg: None,
             cfg,
@@ -233,9 +236,18 @@ async fn fetch_ideas(app: &mut App) {
 }
 
 pub async fn run_tui() -> Result<()> {
+    let mut terminal = tui::init()?;
     let cfg = Config::load()?;
+    
+    let current_user = if !cfg.api_key.is_empty() {
+        crate::api_client::auth_me(&cfg).await.ok()
+    } else {
+        None
+    };
+    
     let mut app = App::new(cfg);
-
+    app.current_user = current_user;
+    
     if app.screen == Screen::ProjectList {
         fetch_projects(&mut app).await;
     }
@@ -578,15 +590,30 @@ pub async fn run_tui() -> Result<()> {
                         KeyCode::Char('e') => {
                             if let Screen::ProjectDetail(idx) = app.screen {
                                 if let Some(p) = app.projects.get(idx) {
-                                    app.prev_screen = Some(app.screen.clone());
-                                    app.screen = Screen::ProjectEdit(p.slug.clone());
-                                    app.project_form_inputs = vec![
-                                        Input::default().with_value(p.name.clone()),
-                                        Input::default().with_value(p.slug.clone()),
-                                        Input::default().with_value(p.description.clone().unwrap_or_default()),
-                                        Input::default().with_value(p.project_type.clone()),
-                                    ];
-                                    app.input_mode = InputMode::ProjectForm(0);
+                                    let mut can_edit = false;
+                                    if let Some(ref me) = app.current_user {
+                                        if me.role == "admin" {
+                                            can_edit = true;
+                                        } else if let Some(ref author) = p.author {
+                                            if author.username == me.username {
+                                                can_edit = true;
+                                            }
+                                        }
+                                    }
+                                    
+                                    if can_edit {
+                                        app.prev_screen = Some(app.screen.clone());
+                                        app.screen = Screen::ProjectEdit(p.slug.clone());
+                                        app.project_form_inputs = vec![
+                                            Input::default().with_value(p.name.clone()),
+                                            Input::default().with_value(p.slug.clone()),
+                                            Input::default().with_value(p.description.clone().unwrap_or_default()),
+                                            Input::default().with_value(p.project_type.clone()),
+                                        ];
+                                        app.input_mode = InputMode::ProjectForm(0);
+                                    } else {
+                                        app.error_msg = Some("編集権限がありません".into());
+                                    }
                                 }
                             }
                         }

@@ -144,3 +144,21 @@ pub async fn update_project(cfg: &Config, slug: &str, req: &UpdateProjectReq) ->
     let msg = data.get("error").and_then(|v| v.as_str()).unwrap_or("不明なエラー");
     Err(anyhow!("プロジェクト更新失敗: {} ({})", msg, status))
 }
+
+pub async fn auth_me(cfg: &Config) -> Result<crate::api_models::AuthMe> {
+    let client = build_client(&cfg.api_key)?;
+    let url = format!("{}/auth/me", cfg.api_base_url);
+    let resp = client.get(&url).send().await?;
+    let status = resp.status();
+    
+    let data: Value = resp.json().await.unwrap_or_default();
+    if status.is_success() {
+        if let Some(user) = data.get("data") {
+            let me: crate::api_models::AuthMe = serde_json::from_value(user.clone())?;
+            return Ok(me);
+        }
+    }
+    
+    let msg = data.get("error").and_then(|v| v.as_str()).unwrap_or("不明なエラー");
+    Err(anyhow!("ユーザー情報取得失敗: {} ({})", msg, status))
+}
