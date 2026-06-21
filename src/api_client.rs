@@ -1,7 +1,6 @@
 // src/api_client.rs
 use anyhow::{Result, Context};
 use reqwest::{Client, header::{HeaderMap, HeaderValue, USER_AGENT, AUTHORIZATION}};
-use crate::config::Config;
 
 /// Build a reqwest client with optional API key authentication.
 ///

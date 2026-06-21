@@ -1,5 +1,5 @@
 // src/commands/login.rs
-use anyhow::{Result, anyhow};
+use anyhow::Result;
 use crate::config::Config;
 
 pub async fn login(api_key: &str) -> Result<()> {

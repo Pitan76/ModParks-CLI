@@ -1,6 +1,9 @@
 use clap::{Parser, Subcommand};
+mod api_client;
+mod api_models;
 mod commands;
 mod config;
+mod pagination;
 
 #[derive(Parser)]
 #[command(name = "modparks", version = "0.1.0", author = "Pitan76", about = "ModParks CLI")]
