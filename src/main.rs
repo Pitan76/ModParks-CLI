@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand, ArgAction};
+use clap::{Parser, Subcommand, ArgAction, CommandFactory};
 mod api_client;
 mod api_models;
 mod cache;
@@ -151,8 +151,15 @@ async fn main() -> anyhow::Result<()> {
             }
         }
     } else {
-        // 引数なしの場合（ダブルクリック起動等）、自動的にTUIを起動する
-        tui::run_tui().await?;
+        // 実行ファイル名を確認
+        let exe_name = std::env::args().next().unwrap_or_default().to_lowercase();
+        if exe_name.contains("modparks-tui") {
+            // エイリアス (modparks-tui) 経由で呼ばれた場合のみTUIを起動
+            tui::run_tui().await?;
+        } else {
+            // modparks-cli で引数なしの場合はヘルプを表示
+            Cli::command().print_help()?;
+        }
     }
     Ok(())
 }
