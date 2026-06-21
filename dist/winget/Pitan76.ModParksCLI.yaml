@@ -2,6 +2,7 @@ PackageIdentifier: Pitan76.ModParksCLI
 PackageVersion: 0.0.1
 PackageName: ModParks CLI
 Publisher: Pitan76
+PackageLocale: ja-JP
 License: MIT
 ShortDescription: CLI for ModParks API
 Installers:
@@ -11,8 +12,6 @@ Installers:
     NestedInstallerFiles:
       - RelativeFilePath: modparks-cli.exe
         PortableCommandAlias: modparks-cli
-      - RelativeFilePath: modparks-tui.cmd
-        PortableCommandAlias: modparks-tui
     InstallerUrl: https://github.com/Pitan76/ModParks-CLI/releases/download/v0.0.1/modparks-cli-v0.0.1-windows-x86_64.zip
     InstallerSha256: 411C3CCED939F4585D4021577E3E975074064752EAD8DA8FC663B5438F319CD6
 ManifestType: singleton
