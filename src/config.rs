@@ -5,12 +5,14 @@ use serde::{Deserialize, Serialize};
 use anyhow::{Result, Context};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Config {
-    pub api_base_url: String,
-    pub api_key: String,
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            api_base_url: "https://modparks.pitan76.net/api/v1".to_string(),
+            api_key: String::new(),
+        }
+    }
 }
-
-impl Config {
     pub fn get_path() -> Result<PathBuf> {
         let mut path = config_dir().context("Unable to locate config directory")?;
         path.push("modparks-cli");
