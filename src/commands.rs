@@ -39,8 +39,6 @@ struct ApiProject {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-#[derive(Debug, Deserialize, Serialize)]
 struct ApiProjectDetail {
     id: String,
     slug: String,
@@ -71,9 +69,6 @@ struct Downloads {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-#[derive(Debug, Deserialize, Serialize)]
 struct Author {
     username: String,
     #[serde(rename = "displayName")]
@@ -83,8 +78,22 @@ struct Author {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+struct Dependency {
+    id: String,
+    #[serde(rename = "dependencyType")]
+    dependency_type: String,
+    project: DependencyProject,
+}
+
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+struct DependencyProject {
+    id: String,
+    slug: String,
+    name: String,
+    #[serde(rename = "iconUrl")]
+    icon_url: Option<String>,
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 struct ApiIdea {
     id: String,
@@ -98,9 +107,6 @@ struct ApiIdea {
     author: Option<Author>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
 #[derive(Debug, Deserialize, Serialize)]
 struct ApiComment {
     id: String,
