@@ -22,7 +22,7 @@ self_update = { version = "0.44.0", default-features = false, features = ["archi
 [package.metadata.deb]
 maintainer = "Pitan76"
 copyright = "2026, Pitan76"
-license-file = ["../LICENSE", "4"]
+license-file = ["LICENSE", "4"]
 extended-description = "ModParks CLI tool for interacting with ModParks API."
 depends = ""
 section = "utility"
