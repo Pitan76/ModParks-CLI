@@ -146,6 +146,17 @@ enum Commands {
     /// ログアウトする (API キーを削除)
     Logout,
 
+    /// 自分のプロフィールを表示する
+    Profile,
+
+    /// 自分の作成したプロジェクトの一覧を取得する
+    MyProjects {
+        #[arg(default_value_t = 1)]
+        page: u32,
+        #[arg(short, long, default_value_t = 20)]
+        limit: u32,
+    },
+
     /// キャッシュをクリアする
     CacheClear,
 }
@@ -163,6 +174,11 @@ async fn main() -> anyhow::Result<()> {
                 cfg.api_key = String::new();
                 cfg.save()?;
                 println!("ログアウトしました (API キーを削除しました)。");
+            }
+            Commands::Profile => commands::display_profile().await?,
+            Commands::MyProjects { page, limit } => {
+                let offset = page.saturating_sub(1) * limit;
+                commands::list_my_projects(limit, offset).await?
             }
             Commands::Projects { page, page_opt, limit } => {
                 let p = page_opt.unwrap_or(page);

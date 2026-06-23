@@ -286,3 +286,49 @@ pub fn split_project_form(area: Rect) -> (Rect, Rect, Rect, Rect, Rect) {
         .split(area);
     (chunks[0], chunks[1], chunks[2], chunks[3], chunks[4])
 }
+
+pub fn render_profile(f: &mut Frame, area: Rect, user: Option<&crate::api_models::AuthMe>) {
+    let mut text = String::new();
+    if let Some(me) = user {
+        text.push_str(&format!("{}  {}\n", pad_width("ユーザー名", 10), me.username));
+        text.push_str(&format!("{}  {}\n", pad_width("権限", 10), me.role));
+        text.push_str("\n--- 詳細なプロフィールはブラウザ等から確認できます ---\n");
+    } else {
+        text.push_str("未ログイン、またはユーザー情報が取得できません。");
+    }
+
+    let para = Paragraph::new(text)
+        .block(Block::default().borders(Borders::ALL)
+            .title(" プロフィール ")
+            .border_style(Style::default().fg(COLOR_ACCENT)))
+        .wrap(Wrap { trim: false })
+        .style(Style::default().fg(COLOR_FG));
+    f.render_widget(para, area);
+}
+
+pub fn split_download_form(area: Rect) -> (Rect, Rect) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // Path input
+            Constraint::Min(0),    // Message
+        ])
+        .split(area);
+    (chunks[0], chunks[1])
+}
+
+pub fn split_upload_form(area: Rect) -> (Rect, Rect, Rect, Rect, Rect, Rect, Rect) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // file/url
+            Constraint::Length(3), // file_name
+            Constraint::Length(3), // version_number
+            Constraint::Length(3), // loaders
+            Constraint::Length(3), // mc_versions
+            Constraint::Min(5),    // changelog
+            Constraint::Length(3), // Message
+        ])
+        .split(area);
+    (chunks[0], chunks[1], chunks[2], chunks[3], chunks[4], chunks[5], chunks[6])
+}

@@ -15,6 +15,23 @@ pub async fn list_projects(limit: u32, offset: u32) -> Result<()> {
     Ok(())
 }
 
+pub async fn list_my_projects(limit: u32, offset: u32) -> Result<()> {
+    let cfg = Config::load()?;
+    if cfg.api_key.is_empty() {
+        return Err(anyhow!("ログインしていません。まず login コマンドを実行してください。"));
+    }
+    let me = crate::api_client::auth_me(&cfg).await?;
+    let url = format!("{}/projects?limit={}&offset={}&author={}", cfg.api_base_url, limit, offset, me.username);
+    let paginated: PaginatedResponse<ApiProject> = cached_get(&url, &cfg).await?;
+    println!("==== {} のプロジェクト ====", me.username);
+    for p in &paginated.data {
+        println!("- {} ({})", p.name, p.slug);
+    }
+    println!("取得件数: {} (limit={}, offset={})", paginated.meta.count, paginated.meta.limit, paginated.meta.offset);
+    Ok(())
+}
+
+
 pub async fn get_project(slug: &str) -> Result<()> {
     let cfg = Config::load()?;
     let url = format!("{}/projects/{}", cfg.api_base_url, slug);
