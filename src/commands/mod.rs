@@ -9,7 +9,7 @@ pub mod update;
 
 pub use login::login;
 pub use project::{list_projects, get_project, create_project, update_project};
-pub use version::list_versions;
+pub use version::{list_versions, create_version};
 pub use idea::{list_ideas, get_idea};
 pub use comment::{list_comments, post_comment};
 pub use sync::sync_project;
