@@ -7,8 +7,8 @@
 ### Linux (apt)
 ```bash
 # 鍵とリポジトリの登録
-curl -fsSL https://pitan76.github.io/apt-repo/modparks.gpg | sudo gpg --dearmor -o /usr/share/keyrings/modparks-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/modparks-archive-keyring.gpg] https://pitan76.github.io/apt-repo/ stable main" | sudo tee /etc/apt/sources.list.d/modparks.list
+curl -fsSL https://pitan76.github.io/apt-repo/pitan76.gpg | sudo gpg --dearmor -o /usr/share/keyrings/pitan76-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/pitan76-archive-keyring.gpg] https://pitan76.github.io/apt-repo/ stable main" | sudo tee /etc/apt/sources.list.d/pitan76.list
 
 # インストール
 sudo apt update && sudo apt install modparks-cli
