@@ -18,7 +18,7 @@ ratatui = "0.29"
 crossterm = "0.28"
 unicode-width = "0.2"
 tui-input = "0.10"
-self_update = { version = "0.44.0", default-features = false, features = ["archive-tar", "archive-zip", "compression-flate2", "rustls", "reqwest"] }
+self_update = { version = "0.44.0", default-features = false, features = ["archive-tar", "archive-zip", "compression-flate2", "compression-zip-deflate", "rustls", "reqwest"] }
 
 
 [package.metadata.deb]
