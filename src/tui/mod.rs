@@ -695,20 +695,19 @@ pub async fn run_tui() -> Result<()> {
                         KeyCode::Down => app.move_down(),
                         KeyCode::Right | KeyCode::Char('>') => {
                             if app.screen == Screen::ProjectList {
-                                let total_pages = if app.project_total == 0 { 1 } else { (app.project_total + app.limit - 1) / app.limit };
-                                if app.project_page < total_pages {
+                                // APIの count が全件数ではなく現在の件数になっているため、
+                                // 取得件数が limit と等しければ次のページがあるかもしれないと判断する
+                                if app.project_total == app.limit {
                                     app.project_page += 1;
                                     fetch_projects(&mut app).await;
                                 }
                             } else if app.screen == Screen::MyProjects {
-                                let total_pages = if app.my_project_total == 0 { 1 } else { (app.my_project_total + app.limit - 1) / app.limit };
-                                if app.my_project_page < total_pages {
+                                if app.my_project_total == app.limit {
                                     app.my_project_page += 1;
                                     fetch_my_projects(&mut app).await;
                                 }
                             } else if app.screen == Screen::IdeaList {
-                                let total_pages = if app.idea_total == 0 { 1 } else { (app.idea_total + app.limit - 1) / app.limit };
-                                if app.idea_page < total_pages {
+                                if app.idea_total == app.limit {
                                     app.idea_page += 1;
                                     fetch_ideas(&mut app).await;
                                 }
