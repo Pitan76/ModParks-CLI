@@ -522,6 +522,7 @@ pub async fn run_tui() -> Result<()> {
                                         } else {
                                             // API Key Login 実行
                                             app.cfg.api_key = app.login_id_input.value().to_string();
+                                            app.current_user = crate::api_client::auth_me(&app.cfg).await.ok();
                                             let _ = app.cfg.save();
                                             app.input_mode = InputMode::Normal;
                                             app.screen = Screen::ProjectList;
@@ -541,6 +542,7 @@ pub async fn run_tui() -> Result<()> {
                                                     app.input_mode = InputMode::LoginTotp;
                                                 } else if let Some(k) = res.api_key {
                                                     app.cfg.api_key = k;
+                                                    app.current_user = crate::api_client::auth_me(&app.cfg).await.ok();
                                                     let _ = app.cfg.save();
                                                     app.input_mode = InputMode::Normal;
                                                     app.screen = Screen::ProjectList;
@@ -564,6 +566,7 @@ pub async fn run_tui() -> Result<()> {
                                             Ok(res) => {
                                                 if let Some(k) = res.api_key {
                                                     app.cfg.api_key = k;
+                                                    app.current_user = crate::api_client::auth_me(&app.cfg).await.ok();
                                                     let _ = app.cfg.save();
                                                     app.input_mode = InputMode::Normal;
                                                     app.screen = Screen::ProjectList;
@@ -689,6 +692,16 @@ pub async fn run_tui() -> Result<()> {
                     }
 
                     // 通常モードの処理
+                    if app.error_msg.is_some() {
+                        match key.code {
+                            KeyCode::Enter | KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('b') => {
+                                app.error_msg = None;
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
+
                     match key.code {
                         KeyCode::Char('q') | KeyCode::Esc => break,
                         KeyCode::Up => app.move_up(),

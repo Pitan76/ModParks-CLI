@@ -3,7 +3,7 @@
 PortSystem          1.0
 PortGroup           github 1.0
 
-github.setup        Pitan76 ModParks-CLI 0.0.8 v
+github.setup        Pitan76 ModParks-CLI 0.0.9 v
 name                modparks-cli
 categories          devel
 platforms           darwin
@@ -13,8 +13,8 @@ maintainers         admin@pitan76.net
 description         CLI for ModParks API
 long_description    ModParks CLI tool for interacting with ModParks API.
 
-master_sites        https://github.com/Pitan76/ModParks-CLI/releases/download/v0.0.8/
-distfiles           modparks-cli-v0.0.8-macos-x86_64.tar.gz
+master_sites        https://github.com/Pitan76/ModParks-CLI/releases/download/v0.0.9/
+distfiles           modparks-cli-v0.0.9-macos-x86_64.tar.gz
 checksums           rmd160  REPLACE_WITH_RMD160 \
                     sha256  REPLACE_WITH_SHA256 \
                     size    REPLACE_WITH_SIZE
