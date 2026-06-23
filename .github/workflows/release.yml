@@ -176,8 +176,8 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: Install dpkg-dev & gnupg
-        run: sudo apt-get update && sudo apt-get install -y dpkg-dev gnupg
+      - name: Install dpkg-dev, gnupg & apt-utils
+        run: sudo apt-get update && sudo apt-get install -y dpkg-dev gnupg apt-utils
 
       - name: Import GPG Key
         run: echo "${{ secrets.APT_GPG_PRIVATE_KEY }}" | gpg --batch --import
@@ -198,7 +198,11 @@ jobs:
           Architectures: amd64
           Components: main
           Description: Official ModParks APT Repository
+          Date: $(date -Ru)
           EOF
+          cd dists/stable
+          apt-ftparchive release . >> Release
+          cd ../..
           gpg --default-key "${{ secrets.APT_GPG_KEY_EMAIL }}" --passphrase "${{ secrets.APT_GPG_PASSPHRASE }}" --batch --yes --pinentry-mode loopback -abs -o dists/stable/Release.gpg dists/stable/Release
           gpg --default-key "${{ secrets.APT_GPG_KEY_EMAIL }}" --passphrase "${{ secrets.APT_GPG_PASSPHRASE }}" --batch --yes --pinentry-mode loopback --clearsign -o dists/stable/InRelease dists/stable/Release
 
