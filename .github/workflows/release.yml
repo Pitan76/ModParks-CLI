@@ -88,6 +88,7 @@ jobs:
         run: |
           tag="${{ github.ref_name }}"
           os_name=$(echo "${{ matrix.os }}" | cut -d'-' -f1)
+          if [ "${os_name}" = "ubuntu" ]; then os_name="linux"; fi
           # Archive binary as tar.gz
           tar -czvf "modparks-cli-${tag}-${os_name}-x86_64.tar.gz" -C target/${{ matrix.target }}/release modparks-cli
           # Copy DEB

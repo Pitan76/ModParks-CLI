@@ -15,9 +15,8 @@ long_description    ModParks CLI tool for interacting with ModParks API.
 
 master_sites        https://github.com/Pitan76/ModParks-CLI/releases/download/v0.0.9/
 distfiles           modparks-cli-v0.0.9-macos-x86_64.tar.gz
-checksums           rmd160  REPLACE_WITH_RMD160 \
-                    sha256  REPLACE_WITH_SHA256 \
-                    size    REPLACE_WITH_SIZE
+checksums           sha256  d9465dc9e2840f5ad1a67cdb55e5695eb892bc40a2fc8d657dbdb819ba3ac3c8 \
+                    size    6122380
 
 use_configure       no
 build               {}
