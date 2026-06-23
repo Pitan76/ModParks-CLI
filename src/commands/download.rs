@@ -40,7 +40,7 @@ pub async fn download_version(
         data_array.first().unwrap()
     };
 
-    let version_id = target_version.get("id").and_then(|v| v.as_str())
+    let _version_id = target_version.get("id").and_then(|v| v.as_str())
         .ok_or_else(|| anyhow!("バージョンIDが取得できませんでした。"))?;
     let file_name = target_version.get("fileName").and_then(|v| v.as_str())
         .unwrap_or("download.jar");

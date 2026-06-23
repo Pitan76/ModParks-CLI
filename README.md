@@ -43,15 +43,19 @@ modparks-cli --help
 | コマンド | 説明 |
 |---|---|
 | `login <API_KEY>` | API キーを保存し、以降のリクエストで認証に使用します |
-| `projects [PAGE] [--limit <n>]` | プロジェクト一覧を取得（デフォルト 20 件、最大 80 件） |
+| `profile` | 現在ログインしているユーザーの情報を表示します |
+| `projects [PAGE] [--limit <n>]` | プロジェクト一覧を取得（デフォルト 20 件） |
+| `my-projects [PAGE] [--limit <n>]` | 自分が作成したプロジェクト一覧を取得 |
 | `project <slug>` | 指定スラッグのプロジェクト詳細を取得 |
 | `versions <slug> [--limit <n>]` | プロジェクトのバージョン一覧を取得 |
+| `download <slug> [--version <ver>]` | プロジェクトのバージョン（ファイル）をダウンロードします |
 | `ideas [--limit <n>]` | アイデア一覧を取得 |
 | `idea <id>` | 指定IDのアイデア詳細を取得 |
 | `comments <slug>` | プロジェクトのコメント一覧を取得 |
 | `comment-post <slug> <content>`| コメントを投稿 |
 | `sync <slug>` | プロジェクトを外部プラットフォームと同期 |
 | `tui` | ターミナルUI (TUI) を起動してインタラクティブに操作します |
+| `update` | modparks-cli 自身を最新バージョンへアップデートします |
 | `cache-clear` | キャッシュされたレスポンスを削除します |
 
 ## TUI (Terminal UI)
