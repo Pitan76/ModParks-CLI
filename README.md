@@ -3,6 +3,17 @@
 ## 概要
 `modparks` は ModParks の API と連携するコマンドラインツールです。プロジェクトの一覧取得、個別プロジェクトの取得、バージョンやアイデア、コメントの取得・投稿、プロジェクトの同期、そして API キーの保存（login）をサポートします。
 
+## インストール
+### Linux (apt)
+```bash
+# 鍵とリポジトリの登録
+curl -fsSL https://pitan76.github.io/apt-repo/modparks.gpg | sudo gpg --dearmor -o /usr/share/keyrings/modparks-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/modparks-archive-keyring.gpg] https://pitan76.github.io/apt-repo/ stable main" | sudo tee /etc/apt/sources.list.d/modparks.list
+
+# インストール
+sudo apt update && sudo apt install modparks-cli
+```
+
 ## 前提条件
 - **Rust** (stable) がインストールされていること
 - `cargo` がパスに通っていること
@@ -20,6 +31,8 @@ cargo build --release
 # 例: Windows のユーザープロファイルの bin ディレクトリへコピー
 copy target\release\modparks-cli.exe %USERPROFILE%\bin\
 ```
+
+
 
 ## 使い方
 ```bash
