@@ -81,6 +81,32 @@ enum Commands {
         limit: u32,
     },
 
+    /// プロジェクトのバージョンを新規登録する
+    VersionCreate {
+        slug: String,
+        /// アップロードするローカルファイルのパス (.jar, .zip など)
+        #[arg(long, conflicts_with = "url")]
+        file: Option<String>,
+        /// 外部ダウンロードURL
+        #[arg(long, conflicts_with = "file")]
+        url: Option<String>,
+        /// 外部ダウンロード時のファイル名 (URL指定時に推奨、未指定時はURLから抽出)
+        #[arg(long)]
+        file_name: Option<String>,
+        /// バージョン番号
+        #[arg(long)]
+        version_number: String,
+        /// 対応ローダー (例: --loader fabric --loader forge)
+        #[arg(long = "loader")]
+        loaders: Vec<String>,
+        /// 対応Minecraftバージョン (例: --mc-version 1.20.1)
+        #[arg(long = "mc-version")]
+        mc_versions: Vec<String>,
+        /// 変更ログ
+        #[arg(long)]
+        changelog: Option<String>,
+    },
+
     /// アイデア一覧を取得
     Ideas {
         #[arg(short, long, default_value_t = 20)]
@@ -139,6 +165,9 @@ async fn main() -> anyhow::Result<()> {
                 commands::update_project(slug, name, new_slug, description, project_type).await?
             }
             Commands::Versions { slug, limit } => commands::list_versions(&slug, limit).await?,
+            Commands::VersionCreate { slug, file, url, file_name, version_number, loaders, mc_versions, changelog } => {
+                commands::create_version(slug, file, url, file_name, version_number, loaders, mc_versions, changelog).await?
+            }
             Commands::Ideas { limit } => commands::list_ideas(limit).await?,
             Commands::Idea { id } => commands::get_idea(&id).await?,
             Commands::Comments { slug } => commands::list_comments(&slug).await?,
