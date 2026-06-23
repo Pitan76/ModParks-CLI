@@ -167,11 +167,11 @@ pub fn render_loading(f: &mut Frame, area: Rect) {
 }
 
 pub fn render_error(f: &mut Frame, area: Rect, message: &str) {
-    let para = Paragraph::new(format!("エラー: {}", message))
-        .style(Style::default().fg(COLOR_ERROR))
-        .alignment(Alignment::Center)
-        .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(COLOR_ERROR)));
-    f.render_widget(para, area);
+    let text = format!("エラー: {}\n\n(Enter, Esc, q 等で閉じる)", message);
+    let p = Paragraph::new(text)
+        .style(Style::default().fg(Color::Red).bg(COLOR_BG))
+        .block(Block::default().borders(Borders::ALL).title(" Error ").style(Style::default().fg(Color::Red)));
+    f.render_widget(p, area);
 }
 
 pub fn render_help(f: &mut Frame, area: Rect) {
