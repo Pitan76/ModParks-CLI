@@ -107,6 +107,18 @@ enum Commands {
         changelog: Option<String>,
     },
 
+    /// プロジェクトのバージョン（ファイル）をダウンロードする
+    Download {
+        /// プロジェクトのスラグ
+        slug: String,
+        /// ダウンロードするバージョン番号 (未指定時は最新版)
+        #[arg(long)]
+        version: Option<String>,
+        /// 出力先ディレクトリまたはファイル名 (未指定時はカレントディレクトリに保存)
+        #[arg(long)]
+        out: Option<String>,
+    },
+
     /// アイデア一覧を取得
     Ideas {
         #[arg(short, long, default_value_t = 20)]
@@ -168,6 +180,7 @@ async fn main() -> anyhow::Result<()> {
             Commands::VersionCreate { slug, file, url, file_name, version_number, loaders, mc_versions, changelog } => {
                 commands::create_version(slug, file, url, file_name, version_number, loaders, mc_versions, changelog).await?
             }
+            Commands::Download { slug, version, out } => commands::download_version(slug, version, out).await?,
             Commands::Ideas { limit } => commands::list_ideas(limit).await?,
             Commands::Idea { id } => commands::get_idea(&id).await?,
             Commands::Comments { slug } => commands::list_comments(&slug).await?,
