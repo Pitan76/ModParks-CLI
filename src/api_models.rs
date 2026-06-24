@@ -52,7 +52,7 @@ pub struct Downloads {
     pub curseforge: Option<u32>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Author {
     pub username: String,
     #[serde(rename = "displayName")]

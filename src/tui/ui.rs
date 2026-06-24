@@ -287,11 +287,16 @@ pub fn split_project_form(area: Rect) -> (Rect, Rect, Rect, Rect, Rect) {
     (chunks[0], chunks[1], chunks[2], chunks[3], chunks[4])
 }
 
-pub fn render_profile(f: &mut Frame, area: Rect, user: Option<&crate::api_models::AuthMe>) {
+pub fn render_profile(f: &mut Frame, area: Rect, author_opt: Option<&crate::api_models::Author>, me: Option<&crate::api_models::AuthMe>) {
     let mut text = String::new();
-    if let Some(me) = user {
-        text.push_str(&format!("{}  {}\n", pad_width("ユーザー名", 10), me.username));
-        text.push_str(&format!("{}  {}\n", pad_width("権限", 10), me.role));
+    if let Some(author) = author_opt {
+        text.push_str(&format!("{}  {}\n", pad_width("ユーザー名", 10), author.username));
+        if let Some(dname) = &author.display_name {
+            text.push_str(&format!("{}  {}\n", pad_width("表示名", 10), dname));
+        }
+        text.push_str("\n--- 詳細なプロフィールはブラウザ等から確認できます ---\n");
+    } else if let Some(user) = me {
+        text.push_str(&format!("{}  {}\n", pad_width("ユーザー名", 10), user.username));
         text.push_str("\n--- 詳細なプロフィールはブラウザ等から確認できます ---\n");
     } else {
         text.push_str("未ログイン、またはユーザー情報が取得できません。");

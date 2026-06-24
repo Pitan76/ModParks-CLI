@@ -88,7 +88,12 @@ pub async fn auth_login(cfg: &Config, identifier: &str, password: &str, totp_cod
     let data: Value = resp.json().await?;
     
     if status.is_success() {
-        if let Some(key) = data.get("apiKey").and_then(|v| v.as_str()) {
+        let key_opt = data.get("apiKey").and_then(|v| v.as_str())
+            .or_else(|| data.get("token").and_then(|v| v.as_str()))
+            .or_else(|| data.get("data").and_then(|d| d.get("apiKey")).and_then(|v| v.as_str()))
+            .or_else(|| data.get("data").and_then(|d| d.get("token")).and_then(|v| v.as_str()));
+
+        if let Some(key) = key_opt {
             return Ok(LoginResponse {
                 api_key: Some(key.to_string()),
                 requires_2fa: None,
