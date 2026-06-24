@@ -29,7 +29,7 @@ enum Screen {
     IdeaList,
     IdeaDetail(usize),
     Help,
-    Profile,
+    Profile(Option<crate::api_models::Author>),
     MyProjects,
     MyProjectDetail(usize),
 }
@@ -101,8 +101,8 @@ impl App {
         let mut idea_state = ListState::default();
         idea_state.select(Some(0));
         
-        let initial_screen = if cfg.api_key.is_empty() { Screen::Login } else { Screen::ProjectList };
-        let initial_input = if cfg.api_key.is_empty() { InputMode::LoginId } else { InputMode::Normal };
+        let initial_screen = Screen::ProjectList;
+        let initial_input = InputMode::Normal;
 
         Self {
             screen: initial_screen,
@@ -150,7 +150,7 @@ impl App {
                 Screen::ProjectDetail(_) => { self.screen = Screen::ProjectList; }
                 Screen::MyProjectDetail(_) => { self.screen = Screen::MyProjects; }
                 Screen::IdeaDetail(_)    => { self.screen = Screen::IdeaList; }
-                Screen::Help             | Screen::ProjectCreate | Screen::ProjectEdit(_) | Screen::Profile | Screen::MyProjects => { self.screen = Screen::ProjectList; }
+                Screen::Help             | Screen::ProjectCreate | Screen::ProjectEdit(_) | Screen::Profile(_) | Screen::MyProjects => { self.screen = Screen::ProjectList; }
                 _                        => {}
             }
         }
@@ -386,9 +386,9 @@ pub async fn run_tui() -> Result<()> {
                         ("Enter", "詳細"), ("< / >", "ページ遷移"), ("p", "全体プロジェクト"), ("b", "戻る"), ("q", "終了"),
                     ]);
                 }
-                Screen::Profile => {
+                Screen::Profile(ref author_opt) => {
                     render_header(f, header_area, "プロフィール", None);
-                    render_profile(f, body_area, app.current_user.as_ref());
+                    render_profile(f, body_area, author_opt.as_ref(), app.current_user.as_ref());
                     render_footer(f, footer_area, &[("b", "戻る"), ("q", "終了")]);
                 }
                 Screen::ProjectDetail(idx) | Screen::MyProjectDetail(idx) => {
@@ -433,7 +433,7 @@ pub async fn run_tui() -> Result<()> {
                                 f.render_widget(ratatui::widgets::Clear, load_area);
                                 render_loading(f, load_area);
                             }
-                            render_footer(f, footer_area, &[("b", "戻る"), ("e", "編集"), ("d", "DL"), ("v", "UP"), ("q", "終了")]);
+                            render_footer(f, footer_area, &[("b", "戻る"), ("e", "編集"), ("d", "DL"), ("v", "UP"), ("u", "作者プロフ"), ("q", "終了")]);
                         }
                     }
                 }
@@ -547,6 +547,8 @@ pub async fn run_tui() -> Result<()> {
                                                     app.input_mode = InputMode::Normal;
                                                     app.screen = Screen::ProjectList;
                                                     fetch_projects(&mut app).await;
+                                                } else {
+                                                    app.error_msg = Some("ログインは成功しましたが、APIキーが取得できませんでした".into());
                                                 }
                                             }
                                             Err(e) => {
@@ -572,7 +574,7 @@ pub async fn run_tui() -> Result<()> {
                                                     app.screen = Screen::ProjectList;
                                                     fetch_projects(&mut app).await;
                                                 } else {
-                                                    app.error_msg = Some("2FAに失敗しました".into());
+                                                    app.error_msg = Some("2FAに失敗したか、APIキーが取得できませんでした".into());
                                                 }
                                             }
                                             Err(e) => {
@@ -761,11 +763,15 @@ pub async fn run_tui() -> Result<()> {
                             }
                         }
                         KeyCode::Char('L') => {
-                            // ログアウト
-                            app.cfg.api_key = String::new();
-                            let _ = app.cfg.save();
-                            app.screen = Screen::Login;
-                            app.input_mode = InputMode::LoginId;
+                            if app.current_user.is_some() {
+                                app.cfg.api_key = String::new();
+                                app.current_user = None;
+                                let _ = app.cfg.save();
+                            } else {
+                                app.prev_screen = Some(app.screen.clone());
+                                app.screen = Screen::Login;
+                                app.input_mode = InputMode::LoginId;
+                            }
                         }
                         KeyCode::Char('p') => {
                             app.screen = Screen::ProjectList;
@@ -776,15 +782,39 @@ pub async fn run_tui() -> Result<()> {
                                 app.screen = Screen::MyProjects;
                                 if app.my_projects.is_empty() { fetch_my_projects(&mut app).await; }
                             } else {
-                                app.error_msg = Some("ログインが必要です".into());
+                                app.prev_screen = Some(app.screen.clone());
+                                app.screen = Screen::Login;
+                                app.input_mode = InputMode::LoginId;
                             }
                         }
                         KeyCode::Char('u') => {
-                            if app.current_user.is_some() {
-                                app.prev_screen = Some(app.screen.clone());
-                                app.screen = Screen::Profile;
+                            if let Screen::ProjectDetail(idx) = app.screen {
+                                if let Some(p) = app.projects.get(idx) {
+                                    if let Some(author) = &p.author {
+                                        app.prev_screen = Some(app.screen.clone());
+                                        app.screen = Screen::Profile(Some(author.clone()));
+                                    } else {
+                                        app.error_msg = Some("作者情報がありません".into());
+                                    }
+                                }
+                            } else if let Screen::IdeaDetail(idx) = app.screen {
+                                if let Some(i) = app.ideas.get(idx) {
+                                    if let Some(author) = &i.author {
+                                        app.prev_screen = Some(app.screen.clone());
+                                        app.screen = Screen::Profile(Some(author.clone()));
+                                    } else {
+                                        app.error_msg = Some("作者情報がありません".into());
+                                    }
+                                }
                             } else {
-                                app.error_msg = Some("ログインが必要です".into());
+                                if app.current_user.is_some() {
+                                    app.prev_screen = Some(app.screen.clone());
+                                    app.screen = Screen::Profile(None);
+                                } else {
+                                    app.prev_screen = Some(app.screen.clone());
+                                    app.screen = Screen::Login;
+                                    app.input_mode = InputMode::LoginId;
+                                }
                             }
                         }
                         KeyCode::Char('i') => {
@@ -814,21 +844,40 @@ pub async fn run_tui() -> Result<()> {
                         }
                         KeyCode::Char('v') => {
                             if matches!(app.screen, Screen::ProjectDetail(_) | Screen::MyProjectDetail(_)) {
-                                app.upload_inputs = vec![Input::default(); 6];
-                                app.input_mode = InputMode::UploadForm(0);
+                                if app.current_user.is_some() {
+                                    app.upload_inputs = vec![Input::default(); 6];
+                                    app.input_mode = InputMode::UploadForm(0);
+                                } else {
+                                    app.prev_screen = Some(app.screen.clone());
+                                    app.screen = Screen::Login;
+                                    app.input_mode = InputMode::LoginId;
+                                }
                             }
                         }
                         KeyCode::Char('c') => {
                             if app.screen == Screen::ProjectList {
-                                app.prev_screen = Some(app.screen.clone());
-                                app.screen = Screen::ProjectCreate;
-                                app.project_form_inputs = vec![Input::default(); 4];
-                                app.input_mode = InputMode::ProjectForm(0);
+                                if app.current_user.is_some() {
+                                    app.prev_screen = Some(app.screen.clone());
+                                    app.screen = Screen::ProjectCreate;
+                                    app.project_form_inputs = vec![Input::default(); 4];
+                                    app.input_mode = InputMode::ProjectForm(0);
+                                } else {
+                                    app.prev_screen = Some(app.screen.clone());
+                                    app.screen = Screen::Login;
+                                    app.input_mode = InputMode::LoginId;
+                                }
                             }
                         }
                         KeyCode::Char('e') => {
                             if let Screen::ProjectDetail(idx) = app.screen {
                                 if let Some(p) = app.projects.get(idx) {
+                                    if app.current_user.is_none() {
+                                        app.prev_screen = Some(app.screen.clone());
+                                        app.screen = Screen::Login;
+                                        app.input_mode = InputMode::LoginId;
+                                        continue;
+                                    }
+
                                     let mut can_edit = false;
                                     if let Some(ref me) = app.current_user {
                                         if me.role == "admin" {
