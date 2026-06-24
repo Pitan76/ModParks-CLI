@@ -195,15 +195,13 @@ jobs:
           cd apt-repo
           dpkg-scanpackages --multiversion pool/main > dists/stable/main/binary-amd64/Packages
           gzip -k -f dists/stable/main/binary-amd64/Packages
-          cat <<EOF > dists/stable/Release
-Origin: Pitan76
-Label: Pitan76 APT Repository
-Suite: stable
-Codename: stable
-Architectures: amd64
-Components: main
-Description: Pitan76 APT Repository
-EOF
+          echo "Origin: Pitan76" > dists/stable/Release
+          echo "Label: Pitan76 APT Repository" >> dists/stable/Release
+          echo "Suite: stable" >> dists/stable/Release
+          echo "Codename: stable" >> dists/stable/Release
+          echo "Architectures: amd64" >> dists/stable/Release
+          echo "Components: main" >> dists/stable/Release
+          echo "Description: Pitan76 APT Repository" >> dists/stable/Release
           cd dists/stable
           apt-ftparchive release . >> Release
           cd ../..
