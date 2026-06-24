@@ -196,15 +196,14 @@ jobs:
           dpkg-scanpackages --multiversion pool/main > dists/stable/main/binary-amd64/Packages
           gzip -k -f dists/stable/main/binary-amd64/Packages
           cat <<EOF > dists/stable/Release
-          Origin: ModParks
-          Label: ModParks CLI Repository
-          Suite: stable
-          Codename: stable
-          Architectures: amd64
-          Components: main
-          Description: Official ModParks APT Repository
-          Date: $(date -Ru)
-          EOF
+Origin: Pitan76
+Label: Pitan76 APT Repository
+Suite: stable
+Codename: stable
+Architectures: amd64
+Components: main
+Description: Pitan76 APT Repository
+EOF
           cd dists/stable
           apt-ftparchive release . >> Release
           cd ../..
