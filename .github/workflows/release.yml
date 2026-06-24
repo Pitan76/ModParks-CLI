@@ -168,7 +168,12 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout APT repository
+        uses: actions/checkout@v4
+        with:
+          repository: Pitan76/apt-repo
+          token: ${{ secrets.APT_REPO_PAT }}
+          path: apt-repo
       
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -203,15 +208,18 @@ jobs:
           cd dists/stable
           apt-ftparchive release . >> Release
           cd ../..
+          rm -f dists/stable/Release.gpg dists/stable/InRelease
           gpg --default-key "${{ secrets.APT_GPG_KEY_EMAIL }}" --passphrase "${{ secrets.APT_GPG_PASSPHRASE }}" --batch --yes --pinentry-mode loopback -abs -o dists/stable/Release.gpg dists/stable/Release
           gpg --default-key "${{ secrets.APT_GPG_KEY_EMAIL }}" --passphrase "${{ secrets.APT_GPG_PASSPHRASE }}" --batch --yes --pinentry-mode loopback --clearsign -o dists/stable/InRelease dists/stable/Release
 
-      - name: Deploy APT Repo to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./apt-repo
-          keep_files: true
+      - name: Commit and Push changes
+        run: |
+          cd apt-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Update APT repository for ${{ github.ref_name }}" || echo "No changes to commit"
+          git push origin HEAD:main
 
   publish-homebrew:
     name: Publish to Homebrew
