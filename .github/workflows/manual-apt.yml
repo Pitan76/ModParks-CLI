@@ -1,0 +1,65 @@
+name: Manual Update APT Repo
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name to fetch .deb from (e.g. v0.1.1)'
+        required: true
+        default: 'v0.1.1'
+
+jobs:
+  publish-apt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout APT repository
+        uses: actions/checkout@v4
+        with:
+          repository: Pitan76/apt-repo
+          token: ${{ secrets.APT_REPO_PAT }}
+          path: apt-repo
+      
+      - name: Download Deb from latest release
+        run: |
+          mkdir -p artifacts
+          wget -q https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.tag_name }}/modparks-cli-${{ github.event.inputs.tag_name }}-ubuntu-x86_64.deb -P artifacts/ || echo "Failed to download"
+
+      - name: Install dpkg-dev, gnupg & apt-utils
+        run: sudo apt-get update && sudo apt-get install -y dpkg-dev gnupg apt-utils
+
+      - name: Import GPG Key
+        run: echo "${{ secrets.APT_GPG_PRIVATE_KEY }}" | gpg --batch --import
+
+      - name: Generate APT Repository
+        run: |
+          mkdir -p apt-repo/pool/main/
+          mkdir -p apt-repo/dists/stable/main/binary-amd64/
+          cp artifacts/*.deb apt-repo/pool/main/
+          cd apt-repo
+          dpkg-scanpackages --multiversion pool/main > dists/stable/main/binary-amd64/Packages
+          gzip -k -f dists/stable/main/binary-amd64/Packages
+          cat <<EOF > dists/stable/Release
+          Origin: ModParks
+          Label: ModParks CLI Repository
+          Suite: stable
+          Codename: stable
+          Architectures: amd64
+          Components: main
+          Description: Official ModParks APT Repository
+          Date: $(date -Ru)
+          EOF
+          cd dists/stable
+          apt-ftparchive release . >> Release
+          cd ../..
+          rm -f dists/stable/Release.gpg dists/stable/InRelease
+          gpg --default-key "${{ secrets.APT_GPG_KEY_EMAIL }}" --passphrase "${{ secrets.APT_GPG_PASSPHRASE }}" --batch --yes --pinentry-mode loopback -abs -o dists/stable/Release.gpg dists/stable/Release
+          gpg --default-key "${{ secrets.APT_GPG_KEY_EMAIL }}" --passphrase "${{ secrets.APT_GPG_PASSPHRASE }}" --batch --yes --pinentry-mode loopback --clearsign -o dists/stable/InRelease dists/stable/Release
+
+      - name: Commit and Push changes
+        run: |
+          cd apt-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Manual APT update for ${{ github.event.inputs.tag_name }}" || echo "No changes to commit"
+          git push origin HEAD:main
