@@ -18,9 +18,10 @@ use crate::config::Config;
 use crate::pagination::PaginatedResponse;
 use self::events::{poll_event, AppEvent, is_quit};
 use self::ui::*;
+pub mod screens;
 
 #[derive(Debug, Clone, PartialEq)]
-enum Screen {
+pub enum Screen {
     Login,
     ProjectList,
     ProjectDetail(usize),
@@ -35,7 +36,7 @@ enum Screen {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-enum InputMode {
+pub enum InputMode {
     Normal,
     Search,
     LoginId,
@@ -47,49 +48,49 @@ enum InputMode {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-enum LoginType {
+pub enum LoginType {
     ApiKey,
     Password,
 }
 
-struct App {
-    screen: Screen,
-    prev_screen: Option<Screen>,
-    input_mode: InputMode,
+pub struct App {
+    pub screen: Screen,
+    pub prev_screen: Option<Screen>,
+    pub input_mode: InputMode,
     
-    projects: Vec<ApiProject>,
-    my_projects: Vec<ApiProject>,
-    ideas: Vec<ApiIdea>,
-    project_state: ListState,
-    my_project_state: ListState,
-    idea_state: ListState,
+    pub projects: Vec<ApiProject>,
+    pub my_projects: Vec<ApiProject>,
+    pub ideas: Vec<ApiIdea>,
+    pub project_state: ListState,
+    pub my_project_state: ListState,
+    pub idea_state: ListState,
     
     // Pagination & Search
-    project_page: u32,
-    project_total: u32,
-    my_project_page: u32,
-    my_project_total: u32,
-    idea_page: u32,
-    idea_total: u32,
-    limit: u32,
-    search_input: Input,
+    pub project_page: u32,
+    pub project_total: u32,
+    pub my_project_page: u32,
+    pub my_project_total: u32,
+    pub idea_page: u32,
+    pub idea_total: u32,
+    pub limit: u32,
+    pub search_input: Input,
     
     // Login
-    login_type: LoginType,
-    login_id_input: Input,
-    login_pw_input: Input,
-    login_totp_input: Input,
-    login_requires_totp: bool,
+    pub login_type: LoginType,
+    pub login_id_input: Input,
+    pub login_pw_input: Input,
+    pub login_totp_input: Input,
+    pub login_requires_totp: bool,
     
-    project_form_inputs: Vec<Input>,
-    download_input: Input,
-    upload_inputs: Vec<Input>,
+    pub project_form_inputs: Vec<Input>,
+    pub download_input: Input,
+    pub upload_inputs: Vec<Input>,
 
-    current_user: Option<crate::api_models::AuthMe>,
+    pub current_user: Option<crate::api_models::AuthMe>,
 
-    loading: bool,
-    error_msg: Option<String>,
-    cfg: Config,
+    pub loading: bool,
+    pub error_msg: Option<String>,
+    pub cfg: Config,
 }
 
 impl App {
@@ -138,7 +139,7 @@ impl App {
     }
 
     // （以下各種ヘルパーは省略せずに記述）
-    fn go_back(&mut self) {
+    pub fn go_back(&mut self) {
         if self.input_mode != InputMode::Normal {
             self.input_mode = InputMode::Normal;
             return;
@@ -156,7 +157,7 @@ impl App {
         }
     }
 
-    fn move_up(&mut self) {
+    pub fn move_up(&mut self) {
         match &self.screen {
             Screen::ProjectList => {
                 let i = self.project_state.selected().unwrap_or(0);
@@ -181,7 +182,7 @@ impl App {
         }
     }
 
-    fn move_down(&mut self) {
+    pub fn move_down(&mut self) {
         match &self.screen {
             Screen::ProjectList => {
                 let len = self.projects.len();
@@ -212,7 +213,7 @@ impl App {
         }
     }
 
-    fn enter(&mut self) {
+    pub fn enter(&mut self) {
         match &self.screen {
             Screen::ProjectList => {
                 if let Some(i) = self.project_state.selected() {
@@ -329,160 +330,15 @@ pub async fn run_tui() -> Result<()> {
             let (header_area, body_area, footer_area) = split_layout(area);
 
             match &app.screen {
-                Screen::Login => {
-                    render_header(f, header_area, "ログイン", None);
-                    
-                    let (type_area, id_area, pw_area, totp_area, msg_area) = split_login(body_area);
-                    
-                    let type_txt = if app.login_type == LoginType::Password { "[*] ID/Password   [ ] API Key" } else { "[ ] ID/Password   [*] API Key" };
-                    f.render_widget(ratatui::widgets::Paragraph::new(type_txt).block(ratatui::widgets::Block::default().borders(ratatui::widgets::Borders::ALL).title(" ログイン方式 (Tabで切替) ")), type_area);
-                    
-                    if app.login_type == LoginType::Password {
-                        render_input(f, id_area, "ID / Email (Enterで次へ)", &app.login_id_input, false, app.input_mode == InputMode::LoginId);
-                        render_input(f, pw_area, "Password (Enterでログイン)", &app.login_pw_input, true, app.input_mode == InputMode::LoginPassword);
-                        if app.login_requires_totp {
-                            render_input(f, totp_area, "2FA Code (Enterでログイン)", &app.login_totp_input, false, app.input_mode == InputMode::LoginTotp);
-                        }
-                    } else {
-                        render_input(f, id_area, "API Key (Enterでログイン)", &app.login_id_input, true, app.input_mode == InputMode::LoginId);
-                    }
-                    
-                    if let Some(err) = &app.error_msg {
-                        render_error(f, msg_area, err);
-                    } else if app.loading {
-                        render_loading(f, msg_area);
-                    }
-                    render_footer(f, footer_area, &[("Tab", "方式切替"), ("↑/↓", "移動"), ("Enter", "実行"), ("Esc", "キャンセル")]);
-                }
-                Screen::ProjectList => {
-                    let page_str = format!("{}件表示 | {}ページ", app.limit, app.project_page);
-                    render_header(f, header_area, "プロジェクト", Some(&page_str));
-                    let (search_area, list_area) = split_search(body_area);
-                    render_input(f, search_area, "検索 (/ で入力)", &app.search_input, false, app.input_mode == InputMode::Search);
-                    
-                    if let Some(err) = &app.error_msg {
-                        render_error(f, list_area, err);
-                    } else if app.loading {
-                        render_loading(f, list_area);
-                    } else {
-                        render_project_list(f, list_area, &app.projects, &mut app.project_state);
-                    }
-                    render_footer(f, footer_area, &[
-                        ("Enter", "詳細"), ("< / >", "ページ遷移"), ("l", "件数変更"), ("i", "アイデア"), ("m", "自分のプロジェクト"), ("u", "プロフィール"), ("L", "ログイン/ログアウト"), ("/", "検索"), ("r", "再取得"), ("?", "ヘルプ"), ("q", "終了"),
-                    ]);
-                }
-                Screen::MyProjects => {
-                    let page_str = format!("{}件表示 | {}ページ", app.limit, app.my_project_page);
-                    render_header(f, header_area, "自分のプロジェクト", Some(&page_str));
-                    
-                    if let Some(err) = &app.error_msg {
-                        render_error(f, body_area, err);
-                    } else if app.loading {
-                        render_loading(f, body_area);
-                    } else {
-                        render_project_list(f, body_area, &app.my_projects, &mut app.my_project_state);
-                    }
-                    render_footer(f, footer_area, &[
-                        ("Enter", "詳細"), ("< / >", "ページ遷移"), ("p", "全体プロジェクト"), ("b", "戻る"), ("L", "ログイン/ログアウト"), ("q", "終了"),
-                    ]);
-                }
-                Screen::Profile(ref author_opt) => {
-                    render_header(f, header_area, "プロフィール", None);
-                    render_profile(f, body_area, author_opt.as_ref(), app.current_user.as_ref(), &app.my_projects);
-                    render_footer(f, footer_area, &[("b", "戻る"), ("q", "終了")]);
-                }
-                Screen::ProjectDetail(idx) | Screen::MyProjectDetail(idx) => {
-                    let (title, project) = if matches!(app.screen, Screen::ProjectDetail(_)) {
-                        (app.projects.get(*idx).map(|p| p.name.as_str()).unwrap_or("詳細"), app.projects.get(*idx))
-                    } else {
-                        (app.my_projects.get(*idx).map(|p| p.name.as_str()).unwrap_or("詳細"), app.my_projects.get(*idx))
-                    };
-                    render_header(f, header_area, title, None);
-
-                    match app.input_mode {
-                        InputMode::DownloadForm => {
-                            let (path_a, msg_a) = split_download_form(body_area);
-                            render_input(f, path_a, "保存先ディレクトリパス", &app.download_input, false, true);
-                            if let Some(err) = &app.error_msg { render_error(f, msg_a, err); }
-                            else if app.loading { render_loading(f, msg_a); }
-                            render_footer(f, footer_area, &[("Enter", "ダウンロード実行"), ("Esc", "キャンセル")]);
-                        }
-                        InputMode::UploadForm(focus) => {
-                            let (file_a, name_a, ver_a, load_a, mc_a, change_a, msg_a) = split_upload_form(body_area);
-                            render_input(f, file_a, "File Path or URL", &app.upload_inputs[0], false, focus == 0);
-                            render_input(f, name_a, "File Name (optional for local file)", &app.upload_inputs[1], false, focus == 1);
-                            render_input(f, ver_a, "Version Number", &app.upload_inputs[2], false, focus == 2);
-                            render_input(f, load_a, "Loaders (comma separated)", &app.upload_inputs[3], false, focus == 3);
-                            render_input(f, mc_a, "Minecraft Versions (comma separated)", &app.upload_inputs[4], false, focus == 4);
-                            render_input(f, change_a, "Changelog", &app.upload_inputs[5], false, focus == 5);
-                            if let Some(err) = &app.error_msg { render_error(f, msg_a, err); }
-                            else if app.loading { render_loading(f, msg_a); }
-                            render_footer(f, footer_area, &[("Tab", "項目移動"), ("Enter", "アップロード実行"), ("Esc", "キャンセル")]);
-                        }
-                        _ => {
-                            if let Some(p) = project {
-                                render_project_detail(f, body_area, p);
-                            }
-                            if let Some(err) = &app.error_msg {
-                                // エラーメッセージを画面中央に被せる簡易表示
-                                let err_area = ratatui::layout::Rect::new(area.x + 5, area.y + 5, area.width.saturating_sub(10), 3);
-                                f.render_widget(ratatui::widgets::Clear, err_area);
-                                render_error(f, err_area, err);
-                            } else if app.loading {
-                                let load_area = ratatui::layout::Rect::new(area.x + 5, area.y + 5, area.width.saturating_sub(10), 3);
-                                f.render_widget(ratatui::widgets::Clear, load_area);
-                                render_loading(f, load_area);
-                            }
-                            render_footer(f, footer_area, &[("b", "戻る"), ("e", "編集"), ("d", "DL"), ("v", "UP"), ("u", "作者プロフ"), ("q", "終了")]);
-                        }
-                    }
-                }
-                Screen::ProjectCreate | Screen::ProjectEdit(_) => {
-                    let title = if matches!(app.screen, Screen::ProjectCreate) { "プロジェクト作成" } else { "プロジェクト編集" };
-                    render_header(f, header_area, title, None);
-                    let (name_a, slug_a, desc_a, type_a, msg_a) = split_project_form(body_area);
-                    
-                    let focus = if let InputMode::ProjectForm(i) = app.input_mode { i } else { 99 };
-                    
-                    render_input(f, name_a, "Name", &app.project_form_inputs[0], false, focus == 0);
-                    render_input(f, slug_a, "Slug", &app.project_form_inputs[1], false, focus == 1);
-                    render_input(f, desc_a, "Description", &app.project_form_inputs[2], false, focus == 2);
-                    render_input(f, type_a, "Type (mod/plugin)", &app.project_form_inputs[3], false, focus == 3);
-
-                    if let Some(err) = &app.error_msg {
-                        render_error(f, msg_a, err);
-                    } else if app.loading {
-                        render_loading(f, msg_a);
-                    }
-                    render_footer(f, footer_area, &[("Tab", "項目移動"), ("Enter", "保存"), ("Esc", "キャンセル")]);
-                }
-                Screen::IdeaList => {
-                    let page_str = format!("{}件表示 | {}ページ", app.limit, app.idea_page);
-                    render_header(f, header_area, "アイデア", Some(&page_str));
-                    if let Some(err) = &app.error_msg {
-                        render_error(f, body_area, err);
-                    } else if app.loading {
-                        render_loading(f, body_area);
-                    } else {
-                        render_idea_list(f, body_area, &app.ideas, &mut app.idea_state);
-                    }
-                    render_footer(f, footer_area, &[
-                        ("Enter", "詳細"), ("< / >", "ページ遷移"), ("p", "プロジェクト"), ("L", "ログイン/ログアウト"), ("r", "再取得"), ("?", "ヘルプ"), ("q", "終了"),
-                    ]);
-                }
-                Screen::IdeaDetail(idx) => {
-                    let title = app.ideas.get(*idx).map(|i| i.title.as_str()).unwrap_or("詳細");
-                    render_header(f, header_area, title, None);
-                    if let Some(idea) = app.ideas.get(*idx) {
-                        render_idea_detail(f, body_area, idea);
-                    }
-                    render_footer(f, footer_area, &[("b", "戻る"), ("q", "終了")]);
-                }
-                Screen::Help => {
-                    render_header(f, header_area, "ヘルプ", None);
-                    render_help(f, body_area);
-                    render_footer(f, footer_area, &[("b / Esc", "戻る"), ("q", "終了")]);
-                }
+                Screen::Login => screens::login::render(&app, f, header_area, body_area, footer_area),
+                Screen::ProjectList => screens::project_list::render(&mut app, f, header_area, body_area, footer_area),
+                Screen::MyProjects => screens::my_projects::render(&mut app, f, header_area, body_area, footer_area),
+                Screen::Profile(ref author_opt) => screens::profile::render(&app, f, header_area, body_area, footer_area, author_opt.as_ref()),
+                Screen::ProjectDetail(idx) | Screen::MyProjectDetail(idx) => screens::project_detail::render(&app, f, header_area, body_area, footer_area, *idx),
+                Screen::ProjectCreate | Screen::ProjectEdit(_) => screens::project_form::render(&app, f, header_area, body_area, footer_area),
+                Screen::IdeaList => screens::idea_list::render(&mut app, f, header_area, body_area, footer_area),
+                Screen::IdeaDetail(idx) => screens::idea_detail::render(&app, f, header_area, body_area, footer_area, *idx),
+                Screen::Help => screens::help::render(&app, f, header_area, body_area, footer_area),
             }
         })?;
 
