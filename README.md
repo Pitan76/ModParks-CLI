@@ -61,6 +61,7 @@ modparks-cli --help
 | `tui` | ターミナルUI (TUI) を起動してインタラクティブに操作します |
 | `update` | modparks-cli 自身を最新バージョンへアップデートします |
 | `cache-clear` | キャッシュされたレスポンスを削除します |
+| `help` | 各コマンドのヘルプメッセージを表示します |
 
 ## TUI (Terminal UI)
 `modparks-cli tui` コマンドで起動できる TUI モードでは、方向キーやショートカットでプロジェクトやアイデアを簡単に閲覧できます。
