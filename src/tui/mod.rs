@@ -352,7 +352,7 @@ pub async fn run_tui() -> Result<()> {
                     } else if app.loading {
                         render_loading(f, msg_area);
                     }
-                    render_footer(f, footer_area, &[("Tab", "方式切替"), ("↑/↓", "移動"), ("Enter", "実行"), ("q", "終了")]);
+                    render_footer(f, footer_area, &[("Tab", "方式切替"), ("↑/↓", "移動"), ("Enter", "実行"), ("Esc", "キャンセル")]);
                 }
                 Screen::ProjectList => {
                     let page_str = format!("{}件表示 | {}ページ", app.limit, app.project_page);
@@ -368,7 +368,7 @@ pub async fn run_tui() -> Result<()> {
                         render_project_list(f, list_area, &app.projects, &mut app.project_state);
                     }
                     render_footer(f, footer_area, &[
-                        ("Enter", "詳細"), ("< / >", "ページ遷移"), ("l", "件数変更"), ("i", "アイデア"), ("m", "自分のプロジェクト"), ("u", "プロフィール"), ("/", "検索"), ("r", "再取得"), ("?", "ヘルプ"), ("q", "終了"),
+                        ("Enter", "詳細"), ("< / >", "ページ遷移"), ("l", "件数変更"), ("i", "アイデア"), ("m", "自分のプロジェクト"), ("u", "プロフィール"), ("L", "ログイン/ログアウト"), ("/", "検索"), ("r", "再取得"), ("?", "ヘルプ"), ("q", "終了"),
                     ]);
                 }
                 Screen::MyProjects => {
@@ -383,7 +383,7 @@ pub async fn run_tui() -> Result<()> {
                         render_project_list(f, body_area, &app.my_projects, &mut app.my_project_state);
                     }
                     render_footer(f, footer_area, &[
-                        ("Enter", "詳細"), ("< / >", "ページ遷移"), ("p", "全体プロジェクト"), ("b", "戻る"), ("q", "終了"),
+                        ("Enter", "詳細"), ("< / >", "ページ遷移"), ("p", "全体プロジェクト"), ("b", "戻る"), ("L", "ログイン/ログアウト"), ("q", "終了"),
                     ]);
                 }
                 Screen::Profile(ref author_opt) => {
@@ -467,7 +467,7 @@ pub async fn run_tui() -> Result<()> {
                         render_idea_list(f, body_area, &app.ideas, &mut app.idea_state);
                     }
                     render_footer(f, footer_area, &[
-                        ("Enter", "詳細"), ("< / >", "ページ遷移"), ("p", "プロジェクト"), ("r", "再取得"), ("?", "ヘルプ"), ("q", "終了"),
+                        ("Enter", "詳細"), ("< / >", "ページ遷移"), ("p", "プロジェクト"), ("L", "ログイン/ログアウト"), ("r", "再取得"), ("?", "ヘルプ"), ("q", "終了"),
                     ]);
                 }
                 Screen::IdeaDetail(idx) => {
@@ -494,7 +494,14 @@ pub async fn run_tui() -> Result<()> {
                     // 入力モードの処理
                     if app.input_mode != InputMode::Normal {
                         match key.code {
-                            KeyCode::Esc => { app.input_mode = InputMode::Normal; }
+                            KeyCode::Esc => {
+                                if app.screen == Screen::Login {
+                                    app.screen = app.prev_screen.clone().unwrap_or(Screen::ProjectList);
+                                    app.input_mode = InputMode::Normal;
+                                } else {
+                                    app.input_mode = InputMode::Normal;
+                                }
+                            }
                             KeyCode::Tab => {
                                 if let InputMode::ProjectForm(focus) = app.input_mode {
                                     app.input_mode = InputMode::ProjectForm((focus + 1) % 4);
@@ -766,7 +773,9 @@ pub async fn run_tui() -> Result<()> {
                             if app.current_user.is_some() {
                                 app.cfg.api_key = String::new();
                                 app.current_user = None;
+                                app.my_projects.clear();
                                 let _ = app.cfg.save();
+                                app.screen = Screen::ProjectList;
                             } else {
                                 app.prev_screen = Some(app.screen.clone());
                                 app.screen = Screen::Login;
