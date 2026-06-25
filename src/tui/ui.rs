@@ -287,7 +287,7 @@ pub fn split_project_form(area: Rect) -> (Rect, Rect, Rect, Rect, Rect) {
     (chunks[0], chunks[1], chunks[2], chunks[3], chunks[4])
 }
 
-pub fn render_profile(f: &mut Frame, area: Rect, author_opt: Option<&crate::api_models::Author>, me: Option<&crate::api_models::AuthMe>) {
+pub fn render_profile(f: &mut Frame, area: Rect, author_opt: Option<&crate::api_models::Author>, me: Option<&crate::api_models::AuthMe>, my_projects: &[crate::api_models::ApiProject]) {
     let mut text = String::new();
     if let Some(author) = author_opt {
         text.push_str(&format!("{}  {}\n", pad_width("ユーザー名", 10), author.username));
@@ -297,9 +297,20 @@ pub fn render_profile(f: &mut Frame, area: Rect, author_opt: Option<&crate::api_
         text.push_str("\n--- 詳細なプロフィールはブラウザ等から確認できます ---\n");
     } else if let Some(user) = me {
         text.push_str(&format!("{}  {}\n", pad_width("ユーザー名", 10), user.username));
+        // ロールは表示しません
+        let project_count = my_projects.len();
+        let total_downloads: u32 = my_projects.iter().map(|p| p.downloads.total).sum();
+        text.push_str(&format!("{}  {}\n", pad_width("プロジェクト数", 10), project_count));
+        text.push_str(&format!("{}  {}\n", pad_width("総ダウンロード数", 10), total_downloads));
+        if !my_projects.is_empty() {
+            text.push_str("\n作品一覧:\n");
+            for proj in my_projects {
+                text.push_str(&format!(" - {}\n", proj.name));
+            }
+        }
         text.push_str("\n--- 詳細なプロフィールはブラウザ等から確認できます ---\n");
     } else {
-        text.push_str("未ログイン、またはユーザー情報が取得できません。");
+        text.push_str("未ログイン、またはユーザー情報が取得できません。\n");
     }
 
     let para = Paragraph::new(text)

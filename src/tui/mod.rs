@@ -388,7 +388,7 @@ pub async fn run_tui() -> Result<()> {
                 }
                 Screen::Profile(ref author_opt) => {
                     render_header(f, header_area, "プロフィール", None);
-                    render_profile(f, body_area, author_opt.as_ref(), app.current_user.as_ref());
+                    render_profile(f, body_area, author_opt.as_ref(), app.current_user.as_ref(), &app.my_projects);
                     render_footer(f, footer_area, &[("b", "戻る"), ("q", "終了")]);
                 }
                 Screen::ProjectDetail(idx) | Screen::MyProjectDetail(idx) => {
