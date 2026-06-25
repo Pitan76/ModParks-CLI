@@ -1,6 +1,74 @@
-use ratatui::{Frame, layout::Rect};
+use ratatui::{
+    Frame,
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Style},
+    widgets::{Block, Borders, Paragraph, Wrap},
+};
 use crate::tui::{App, InputMode, Screen};
-use crate::tui::ui::{render_header, render_footer, split_download_form, split_upload_form, render_input, render_error, render_loading, render_project_detail};
+use crate::tui::ui::{
+    render_header, render_footer, render_input, render_error, render_loading, pad_width,
+    COLOR_ACCENT, COLOR_FG
+};
+use crate::api_models::ApiProject;
+
+fn split_download_form(area: Rect) -> (Rect, Rect) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // Path input
+            Constraint::Min(0),    // Message
+        ])
+        .split(area);
+    (chunks[0], chunks[1])
+}
+
+fn split_upload_form(area: Rect) -> (Rect, Rect, Rect, Rect, Rect, Rect, Rect) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // file/url
+            Constraint::Length(3), // file_name
+            Constraint::Length(3), // version_number
+            Constraint::Length(3), // loaders
+            Constraint::Length(3), // mc_versions
+            Constraint::Min(5),    // changelog
+            Constraint::Length(3), // Message
+        ])
+        .split(area);
+    (chunks[0], chunks[1], chunks[2], chunks[3], chunks[4], chunks[5], chunks[6])
+}
+
+fn render_project_detail(f: &mut Frame, area: Rect, project: &ApiProject) {
+    let author = project.author.as_ref().map(|a| {
+        a.display_name.clone().unwrap_or_else(|| a.username.clone())
+    }).unwrap_or_else(|| "不明".to_string());
+
+    let tags = project.tags.as_deref().unwrap_or(&[]).join(", ");
+
+    let rows: &[(&str, &str)] = &[
+        ("名前",           &project.name),
+        ("スラッグ",       &project.slug),
+        ("作者",           &author),
+        ("ライセンス",     &project.license),
+    ];
+    let mut text = String::new();
+    for (label, value) in rows {
+        text.push_str(&format!("{}  {}\n", pad_width(label, 8), value));
+    }
+    text.push_str(&format!("{}  {}\n", pad_width("DL数", 8), project.downloads.total));
+    text.push_str(&format!("{}  {}\n", pad_width("タグ", 8),
+        if tags.is_empty() { "なし".to_string() } else { tags }));
+    text.push_str("\n--- 説明 ---\n");
+    text.push_str(project.description.as_deref().unwrap_or("なし"));
+
+    let para = Paragraph::new(text)
+        .block(Block::default().borders(Borders::ALL)
+            .title(format!(" {} ", project.name))
+            .border_style(Style::default().fg(COLOR_ACCENT)))
+        .wrap(Wrap { trim: false })
+        .style(Style::default().fg(COLOR_FG));
+    f.render_widget(para, area);
+}
 
 pub fn render(app: &App, f: &mut Frame, header_area: Rect, body_area: Rect, footer_area: Rect, idx: usize) {
     let (title, project) = if matches!(app.screen, Screen::ProjectDetail(_)) {

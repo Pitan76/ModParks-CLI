@@ -1,6 +1,20 @@
-use ratatui::{Frame, layout::Rect};
+use ratatui::{Frame, layout::{Constraint, Direction, Layout, Rect}};
 use crate::tui::{App, LoginType, InputMode};
-use crate::tui::ui::{render_header, render_footer, split_login, render_input, render_error, render_loading};
+use crate::tui::ui::{render_header, render_footer, render_input, render_error, render_loading};
+
+fn split_login(area: Rect) -> (Rect, Rect, Rect, Rect, Rect) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // Option Selector
+            Constraint::Length(3), // ID / API Key
+            Constraint::Length(3), // Password
+            Constraint::Length(3), // TOTP
+            Constraint::Min(0),    // Padding/Message
+        ])
+        .split(area);
+    (chunks[0], chunks[1], chunks[2], chunks[3], chunks[4])
+}
 
 pub fn render(app: &App, f: &mut Frame, header_area: Rect, body_area: Rect, footer_area: Rect) {
     render_header(f, header_area, "ログイン", None);

@@ -1,6 +1,20 @@
-use ratatui::{Frame, layout::Rect};
+use ratatui::{Frame, layout::{Constraint, Direction, Layout, Rect}};
 use crate::tui::{App, InputMode, Screen};
-use crate::tui::ui::{render_header, render_footer, split_project_form, render_input, render_error, render_loading};
+use crate::tui::ui::{render_header, render_footer, render_input, render_error, render_loading};
+
+fn split_project_form(area: Rect) -> (Rect, Rect, Rect, Rect, Rect) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // Name
+            Constraint::Length(3), // Slug
+            Constraint::Min(5),    // Description
+            Constraint::Length(3), // Type
+            Constraint::Length(3), // Message
+        ])
+        .split(area);
+    (chunks[0], chunks[1], chunks[2], chunks[3], chunks[4])
+}
 
 pub fn render(app: &App, f: &mut Frame, header_area: Rect, body_area: Rect, footer_area: Rect) {
     let title = if matches!(app.screen, Screen::ProjectCreate) { "プロジェクト作成" } else { "プロジェクト編集" };
