@@ -15,13 +15,13 @@ pub async fn login(api_key: &str) -> Result<()> {
 pub async fn interactive_login() -> Result<()> {
     let mut cfg = Config::load()?;
     
-    print!("ユーザーIDまたはメールアドレス: ");
+    print!("Username or Email: ");
     io::stdout().flush()?;
     let mut identifier = String::new();
     io::stdin().read_line(&mut identifier)?;
     let identifier = identifier.trim();
     
-    let password = rpassword::prompt_password("パスワード: ")?;
+    let password = rpassword::prompt_password("Password: ")?;
     
     // First attempt without TOTP
     let resp = api_client::auth_login(&cfg, identifier, &password, None).await?;
@@ -31,7 +31,7 @@ pub async fn interactive_login() -> Result<()> {
     }
     
     let api_key = if resp.requires_2fa == Some(true) {
-        print!("TOTPコード (2段階認証): ");
+        print!("TOTP Code (2FA): ");
         io::stdout().flush()?;
         let mut totp = String::new();
         io::stdin().read_line(&mut totp)?;

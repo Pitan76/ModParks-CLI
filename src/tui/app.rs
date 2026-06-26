@@ -86,8 +86,8 @@ impl App {
         let mut idea_state = ListState::default();
         idea_state.select(Some(0));
         
-        let initial_screen = if cfg.api_key.is_empty() { Screen::Login } else { Screen::ProjectList };
-        let initial_input = if cfg.api_key.is_empty() { InputMode::LoginId } else { InputMode::Normal };
+        let initial_screen = Screen::ProjectList;
+        let initial_input = InputMode::Normal;
 
         Self {
             screen: initial_screen,

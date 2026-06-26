@@ -85,6 +85,19 @@ pub async fn handle_key_event(app: &mut App, key: crossterm::event::KeyEvent) ->
                                     app.input_mode = InputMode::ProjectForm((focus + 1) % 4);
                                 } else if let InputMode::UploadForm(focus) = app.input_mode {
                                     app.input_mode = InputMode::UploadForm((focus + 1) % 6);
+                                } else if app.screen == Screen::Login {
+                                    app.login_type = if app.login_type == LoginType::Password { LoginType::ApiKey } else { LoginType::Password };
+                                    app.input_mode = InputMode::LoginId;
+                                }
+                            }
+                            KeyCode::Up => {
+                                if matches!(app.input_mode, InputMode::LoginId | InputMode::LoginPassword | InputMode::LoginTotp) {
+                                    app.move_up();
+                                }
+                            }
+                            KeyCode::Down => {
+                                if matches!(app.input_mode, InputMode::LoginId | InputMode::LoginPassword | InputMode::LoginTotp) {
+                                    app.move_down();
                                 }
                             }
                             KeyCode::BackTab => {

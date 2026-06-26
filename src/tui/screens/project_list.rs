@@ -15,7 +15,15 @@ pub fn render(app: &mut App, f: &mut Frame, header_area: Rect, body_area: Rect, 
     } else {
         render_project_list(f, list_area, &app.projects, &mut app.project_state);
     }
-    render_footer(f, footer_area, &[
-        ("Enter", "詳細"), ("< / >", "ページ遷移"), ("l", "件数変更"), ("i", "アイデア"), ("m", "自分のプロジェクト"), ("u", "プロフィール"), ("L", "ログイン/ログアウト"), ("/", "検索"), ("r", "再取得"), ("?", "ヘルプ"), ("q", "終了"),
+    let mut footer_hints = vec![
+        ("Enter", "詳細"), ("< / >", "ページ遷移"), ("l", "件数変更"), ("i", "アイデア"), 
+    ];
+    if !app.cfg.api_key.is_empty() {
+        footer_hints.push(("m", "自分のプロジェクト"));
+        footer_hints.push(("u", "プロフィール"));
+    }
+    footer_hints.extend_from_slice(&[
+        ("L", "ログイン/ログアウト"), ("/", "検索"), ("r", "再取得"), ("?", "ヘルプ"), ("q", "終了"),
     ]);
+    render_footer(f, footer_area, &footer_hints);
 }
