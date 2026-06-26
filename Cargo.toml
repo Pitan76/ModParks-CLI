@@ -36,11 +36,3 @@ upgrade-guid = "81216631-BDE9-43B6-956D-DE04423C4293"
 path-guid = "AE72E8BB-732C-409B-B0DC-B4339678122E"
 license = false
 eula = false
-
-[[bin]]
-name = "modparks-cli"
-path = "src/main.rs"
-
-[[bin]]
-name = "modparks-tui"
-path = "src/main.rs"
