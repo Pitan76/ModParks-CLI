@@ -1,0 +1,25 @@
+Origin: ModParks
+Label: ModParks CLI Repository
+Suite: stable
+Codename: stable
+Architectures: amd64
+Components: main
+Description: Official ModParks APT Repository
+Date: Fri, 26 Jun 2026 06:18:57 +0000
+Date: Fri, 26 Jun 2026 06:18:57 +0000
+MD5Sum:
+ 10739043b7b6aab456ca2c6ce0f8f9b0              239 Release
+ ea1beefc9c257dc5a7eb9738f939d0d5              455 main/binary-amd64/Packages
+ 9806edd3989d5932cc7ec3f3fa4c1d7c              346 main/binary-amd64/Packages.gz
+SHA1:
+ b70d8b52399a7d2d872c5b7f5b9dad2878be6060              239 Release
+ e60c0be27725953fba021257b719efc15965f749              455 main/binary-amd64/Packages
+ e940c3647e89fda3f7a754907f0c58dfebcc3b8c              346 main/binary-amd64/Packages.gz
+SHA256:
+ 1cc3276b33f558432ee9d835650ec917592199fd77e514b549b5b6e3f8334782              239 Release
+ e44d61ed7b851ee8feaf10b4886dc5734404c3508e9277c2edaac8d949036791              455 main/binary-amd64/Packages
+ 0460d03c3541726bfd390b596c1a3ce42feb5c1e2d114dff9dad4e7a7878dc24              346 main/binary-amd64/Packages.gz
+SHA512:
+ ad23a7c061344a4879e9f4a84804f25d932e6ec4b3c5a291a50de9f430fa74abba7a2fbad5f404004773955486a993e6fe45af2e1b1aa6c8ee14c0a9822667f2              239 Release
+ dce4fc45640ff079e0c12f8ae45c26890a0b78e611c0f59c59534df244db3a8c70c1f6a9c5e39f07cce90d9d6ccadf3750affae4e81761aa58dd6c2f1a42e90d              455 main/binary-amd64/Packages
+ aa555e77dabb758265824043ce20224290a9f0feb30aae070c112d66d92cc15706b49f85fe92918bb06b7cf6b1a927924e699286e305704abb883fda0a7b6931              346 main/binary-amd64/Packages.gz
