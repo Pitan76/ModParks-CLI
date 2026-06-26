@@ -146,8 +146,10 @@ enum Commands {
     /// ログアウトする (API キーを削除)
     Logout,
 
-    /// 自分のプロフィールを表示する
-    Profile,
+    /// プロフィールを表示する (省略時は自分のプロフィール)
+    Profile {
+        username: Option<String>,
+    },
 
     /// 自分の作成したプロジェクトの一覧を取得する
     MyProjects {
@@ -175,7 +177,7 @@ async fn main() -> anyhow::Result<()> {
                 cfg.save()?;
                 println!("ログアウトしました (API キーを削除しました)。");
             }
-            Commands::Profile => commands::display_profile().await?,
+            Commands::Profile { username } => commands::display_profile(username.as_deref()).await?,
             Commands::MyProjects { page, limit } => {
                 let offset = page.saturating_sub(1) * limit;
                 commands::list_my_projects(limit, offset).await?

@@ -5,18 +5,20 @@ use crate::api_client::{build_client, auth_me};
 use serde_json::Value;
 
 /// Get and display the current user's profile.
-pub async fn display_profile() -> Result<()> {
+pub async fn display_profile(target_username: Option<&str>) -> Result<()> {
     let cfg = Config::load()?;
-    if cfg.api_key.is_empty() {
-        return Err(anyhow!("ログインしていません。まず login コマンドを実行してください。"));
-    }
+    
+    let username = match target_username {
+        Some(u) => u.to_string(),
+        None => {
+            if cfg.api_key.is_empty() {
+                return Err(anyhow!("ログインしていません。まず login コマンドを実行するか、ユーザー名を指定してください。"));
+            }
+            auth_me(&cfg).await?.username
+        }
+    };
 
-    // まず /auth/me でユーザー名を取得
-    let me = auth_me(&cfg).await?;
-    let username = me.username;
-
-    // 次に /users/[username] で詳細プロフィールを取得
-    let client = build_client(&cfg.api_key)?;
+    let client = build_client(if cfg.api_key.is_empty() { "" } else { &cfg.api_key })?;
     let url = format!("{}/users/{}", cfg.api_base_url, username);
     let resp = client.get(&url).send().await?;
     
@@ -32,7 +34,6 @@ pub async fn display_profile() -> Result<()> {
         println!("Bio: {}", data.get("bio").and_then(|v| v.as_str()).unwrap_or("(Not set)"));
         println!("GitHub: {}", data.get("githubUsername").and_then(|v| v.as_str()).unwrap_or("(Not set)"));
         println!("Avatar URL: {}", data.get("avatarUrl").and_then(|v| v.as_str()).unwrap_or("(Not set)"));
-        println!("Role: {}", me.role);
         println!("=================");
     } else {
         println!("プロフィールが見つかりませんでした。");
