@@ -15,7 +15,6 @@ pub const COLOR_DIM: Color    = Color::Rgb(120, 120, 140);
 pub const COLOR_BG: Color     = Color::Rgb(15, 15, 25);
 pub const COLOR_FG: Color     = Color::White;
 pub const COLOR_SELECT: Color = Color::Rgb(44, 82, 130);
-pub const COLOR_ERROR: Color  = Color::Red;
 
 fn pad_width(s: &str, target: usize) -> String {
     let w = s.width();
