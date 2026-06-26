@@ -1,5 +1,6 @@
 // src/commands/mod.rs
-pub mod login;
+#[path = "login.rs"]
+pub mod login_cmd;
 pub mod project;
 pub mod version;
 pub mod idea;
@@ -9,7 +10,7 @@ pub mod update;
 pub mod download;
 pub mod profile;
 
-pub use self::login::{interactive_login, login};
+pub use login_cmd::{login, interactive_login};
 pub use project::{list_projects, list_my_projects, get_project, create_project, update_project};
 pub use version::{list_versions, create_version};
 pub use download::download_version;
