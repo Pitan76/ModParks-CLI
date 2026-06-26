@@ -41,7 +41,7 @@ pub enum Commands {
         slug: String,
         #[arg(long, default_value_t = String::new())]
         description: String,
-        #[arg(long, default_value = "mod")]
+        #[arg(long, default_value = "mod", help = "mod, plugin, resourcepack, datapack, shader, modpack")]
         project_type: String,
     },
     /// プロジェクト情報を編集
@@ -53,7 +53,7 @@ pub enum Commands {
         new_slug: Option<String>,
         #[arg(long)]
         description: Option<String>,
-        #[arg(long)]
+        #[arg(long, help = "mod, plugin, resourcepack, datapack, shader, modpack")]
         project_type: Option<String>,
     },
     /// プロジェクトのバージョン一覧を取得

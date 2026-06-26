@@ -50,6 +50,7 @@ fn render_project_detail(f: &mut Frame, area: Rect, project: &ApiProject) {
         ("スラッグ",       &project.slug),
         ("作者",           &author),
         ("ライセンス",     &project.license),
+        ("種類",           &project.project_type),
     ];
     let mut text = String::new();
     for (label, value) in rows {

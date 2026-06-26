@@ -55,7 +55,8 @@ pub fn render_project_list(f: &mut Frame, area: Rect, projects: &[ApiProject], s
     let items: Vec<ListItem> = projects.iter().map(|p| {
         let dl = format!("{} DL", p.downloads.total);
         let line = Line::from(vec![
-            Span::styled(format!("  {}", pad_width(&p.name, 40)), Style::default().fg(COLOR_FG)),
+            Span::styled(format!("  {}", pad_width(&p.name, 35)), Style::default().fg(COLOR_FG)),
+            Span::styled(format!("  {}", pad_width(&p.project_type, 14)), Style::default().fg(Color::Rgb(150, 180, 220))),
             Span::styled(format!(" {}", rpad_width(&dl, 10)),     Style::default().fg(COLOR_DIM)),
             Span::styled(format!("  {}", p.slug),                  Style::default().fg(COLOR_DIM)),
         ]);
