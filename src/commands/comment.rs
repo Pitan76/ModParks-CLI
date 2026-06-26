@@ -1,19 +1,14 @@
-﻿// src/commands/comment.rs
+// src/commands/comment.rs
 use anyhow::{Result, anyhow};
 use crate::config::Config;
-use crate::api_client::build_client;
+use crate::api_client::{build_client, cached_get};
 use crate::api_models::ApiComment;
 use crate::pagination::PaginatedResponse;
 
 pub async fn list_comments(slug: &str) -> Result<()> {
     let cfg = Config::load()?;
-    let client = build_client(&cfg.api_key)?;
     let url = format!("{}/projects/{}/comments", cfg.api_base_url, slug);
-    let resp = client.get(&url).send().await?;
-    if !resp.status().is_success() {
-        return Err(anyhow!("コメント一覧取得に失敗しました: {}", resp.status()));
-    }
-    let paginated: PaginatedResponse<ApiComment> = resp.json().await?;
+    let paginated: PaginatedResponse<ApiComment> = cached_get(&url, &cfg).await?;
     for comment in paginated.data {
         let author = comment.author
             .as_ref()

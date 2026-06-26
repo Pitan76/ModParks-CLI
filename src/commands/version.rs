@@ -1,19 +1,15 @@
 // src/commands/version.rs
 use anyhow::{Result, anyhow, Context};
 use crate::config::Config;
-use crate::api_client::build_client;
+use crate::api_client::{build_client, cached_get};
 use reqwest::multipart;
 
 /// List versions of a project.
 pub async fn list_versions(slug: &str, limit: u32) -> Result<()> {
     let cfg = Config::load()?;
-    let client = build_client(&cfg.api_key)?;
     let url = format!("{}/projects/{}/versions?limit={}", cfg.api_base_url, slug, limit);
-    let resp = client.get(&url).send().await?;
-    if !resp.status().is_success() {
-        return Err(anyhow!("バージョン取得に失敗しました: {}", resp.status()));
-    }
-    let json: serde_json::Value = resp.json().await?;
+    let json: serde_json::Value = cached_get(&url, &cfg).await
+        .map_err(|_| anyhow!("バージョン取得に失敗しました"))?;
     println!("{}", serde_json::to_string_pretty(&json)?);
     Ok(())
 }

@@ -51,12 +51,7 @@ pub fn render_footer(f: &mut Frame, area: Rect, hints: &[(&str, &str)]) {
     f.render_widget(footer, area);
 }
 
-pub fn render_project_list(
-    f: &mut Frame,
-    area: Rect,
-    projects: &[ApiProject],
-    state: &mut ListState,
-) {
+pub fn render_project_list(f: &mut Frame, area: Rect, projects: &[ApiProject], state: &mut ListState,) {
     let items: Vec<ListItem> = projects.iter().map(|p| {
         let dl = format!("{} DL", p.downloads.total);
         let line = Line::from(vec![

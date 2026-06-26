@@ -1,7 +1,7 @@
 // src/commands/download.rs
 use anyhow::{Result, anyhow, Context};
 use crate::config::Config;
-use crate::api_client::build_client;
+use crate::api_client::{build_client, cached_get};
 use serde_json::Value;
 use std::path::PathBuf;
 use tokio::io::AsyncWriteExt;
@@ -17,11 +17,8 @@ pub async fn download_version(
     
     // 1. バージョン一覧を取得
     let url = format!("{}/projects/{}/versions?limit=50", cfg.api_base_url, slug);
-    let resp = client.get(&url).send().await?;
-    if !resp.status().is_success() {
-        return Err(anyhow!("バージョン情報の取得に失敗しました: {}", resp.status()));
-    }
-    let json: Value = resp.json().await?;
+    let json: Value = cached_get(&url, &cfg).await
+        .map_err(|_| anyhow!("バージョン情報の取得に失敗しました"))?;
     let data_array = json.get("data")
         .and_then(|v| v.as_array())
         .ok_or_else(|| anyhow!("APIレスポンスの形式が不正です (data配列がありません)"))?;
