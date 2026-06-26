@@ -19,6 +19,7 @@ crossterm = "0.28"
 unicode-width = "0.2"
 tui-input = "0.10"
 self_update = { version = "0.44.0", default-features = false, features = ["archive-tar", "archive-zip", "compression-flate2", "compression-zip-deflate", "rustls", "reqwest"] }
+rpassword = "7.5.4"
 
 
 [package.metadata.deb]
@@ -35,3 +36,11 @@ upgrade-guid = "81216631-BDE9-43B6-956D-DE04423C4293"
 path-guid = "AE72E8BB-732C-409B-B0DC-B4339678122E"
 license = false
 eula = false
+
+[[bin]]
+name = "modparks-cli"
+path = "src/main.rs"
+
+[[bin]]
+name = "modparks-tui"
+path = "src/main.rs"

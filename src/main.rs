@@ -16,7 +16,13 @@ async fn main() -> anyhow::Result<()> {
     
     if let Some(cmd) = cli.command {
         match cmd {
-            Commands::Login { api_key } => commands::login(&api_key).await?,
+            Commands::Login { api_key } => {
+                if let Some(key) = api_key {
+                    commands::login(&key).await?
+                } else {
+                    commands::interactive_login().await?
+                }
+            },
             Commands::Update => commands::update()?,
             Commands::Logout => {
                 let mut cfg = config::Config::load()?;

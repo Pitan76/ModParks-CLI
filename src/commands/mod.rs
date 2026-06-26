@@ -9,7 +9,7 @@ pub mod update;
 pub mod download;
 pub mod profile;
 
-pub use login::login;
+pub use login::{login, interactive_login};
 pub use project::{list_projects, list_my_projects, get_project, create_project, update_project};
 pub use version::{list_versions, create_version};
 pub use download::download_version;

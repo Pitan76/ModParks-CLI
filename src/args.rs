@@ -21,7 +21,7 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Commands {
     /// API キーを保存する
-    Login { api_key: String },
+    Login { api_key: Option<String> },
     /// プロジェクト一覧を取得
     Projects {
         #[arg(default_value_t = 1)]
