@@ -26,7 +26,7 @@ pub fn render(app: &App, f: &mut Frame, header_area: Rect, body_area: Rect, foot
     render_input(f, name_a, "Name", &app.project_form_inputs[0], false, focus == 0);
     render_input(f, slug_a, "Slug", &app.project_form_inputs[1], false, focus == 1);
     render_input(f, desc_a, "Description", &app.project_form_inputs[2], false, focus == 2);
-    render_input(f, type_a, "Type (mod/plugin)", &app.project_form_inputs[3], false, focus == 3);
+    render_input(f, type_a, "Type (mod/plugin/resourcepack/datapack/shader/modpack)", &app.project_form_inputs[3], false, focus == 3);
 
     if let Some(err) = &app.error_msg {
         render_error(f, msg_a, err);
