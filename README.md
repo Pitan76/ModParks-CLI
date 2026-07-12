@@ -4,6 +4,11 @@
 `modparks` は ModParks の API と連携するコマンドラインツールです。プロジェクトの一覧取得、個別プロジェクトの取得、バージョンやアイデア、コメントの取得・投稿、プロジェクトの同期、そして API キーの保存（login）をサポートします。
 
 ## インストール
+### Windows (winget)
+```bat
+winget install Pitan76.ModParksCLI
+```
+
 ### Linux (apt)
 ```bash
 # 鍵とリポジトリの登録
